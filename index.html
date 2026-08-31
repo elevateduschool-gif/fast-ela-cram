@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f0a1e" />
+<title>FAST Grade 10 ELA Retake — Cram & Mastery</title>
+<style>
+  :root{
+    --bg:#0f0a1e; --card:#1a1030; --card2:#231640; --border:#2d1f4e;
+    --text:#f0e6ff; --muted:#9b87c4; --purple:#8b5cf6; --blue:#3b82f6;
+    --green:#22c55e; --orange:#f97316; --red:#ef4444; --gold:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px 40px}
+  .top{position:sticky;top:0;z-index:50;background:rgba(15,10,30,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px}
+  .top .row{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px}
+  .brand{font-weight:900;font-size:.95rem;background:linear-gradient(135deg,var(--purple),var(--blue));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+  .spacer{flex:1}
+  .chip{font-size:.7rem;font-weight:800;padding:.25rem .55rem;border-radius:999px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+  .chip.live{border-color:var(--purple);color:#d9c9ff}
+  /* scale meter */
+  .meter-wrap{max-width:560px;margin:8px auto 0}
+  .meter-labels{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .meter{position:relative;height:12px;background:#0d0820;border:1px solid var(--border);border-radius:999px;overflow:visible}
+  .meter .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--orange),var(--gold),var(--green));width:0%;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+  .meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;left:74%}
+  .meter .mark:after{content:"246";position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:900;color:#fff;white-space:nowrap}
+  .meter .cursor{position:absolute;top:-5px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--purple);transform:translateX(-50%);transition:left .6s cubic-bezier(.34,1.56,.64,1)}
+  .score-line{max-width:560px;margin:6px auto 0;display:flex;align-items:baseline;gap:8px;font-size:.72rem;color:var(--muted);font-weight:700}
+  .score-line b{color:var(--text);font-size:1.05rem}
+  /* generic */
+  h1{font-size:1.5rem;font-weight:900;margin:18px 0 6px;letter-spacing:-.5px}
+  h2{font-size:1.05rem;font-weight:900;margin:16px 0 8px}
+  p{margin:0 0 10px}
+  .lead{color:var(--muted);font-weight:600;font-size:.9rem;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+  .card.tight{padding:13px}
+  .tag{display:inline-block;font-size:.62rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;padding:.2rem .5rem;border-radius:6px;margin:0 4px 4px 0}
+  .btn{display:block;width:100%;text-align:center;border:none;border-radius:12px;padding:.85rem 1rem;font-size:1rem;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--purple),var(--blue));transition:opacity .2s,transform .05s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:#1a1030;border:1px solid var(--border);color:var(--muted)}
+  .btn.gold{background:linear-gradient(135deg,var(--orange),var(--gold));color:#231}
+  .list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .opt{display:flex;gap:10px;align-items:flex-start;background:#0d0820;border:1.5px solid var(--border);border-radius:12px;padding:.7rem .8rem;cursor:pointer;font-size:.95rem;font-weight:600;text-align:left;transition:border-color .15s,background .15s}
+  .opt .k{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;color:var(--muted);margin-top:1px}
+  .opt.sel{border-color:var(--purple);background:rgba(139,92,246,.12)}
+  .opt.sel .k{border-color:var(--purple);color:#d9c9ff}
+  .opt.correct{border-color:var(--green);background:rgba(34,197,94,.12)}
+  .opt.correct .k{border-color:var(--green);color:var(--green)}
+  .opt.wrong{border-color:var(--red);background:rgba(239,68,68,.1)}
+  .opt.wrong .k{border-color:var(--red);color:var(--red)}
+  .opt.disabled{cursor:default}
+  .passage{background:linear-gradient(135deg,#160e2e,#12132e);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+  .passage h3{font-size:1.15rem;font-weight:900;margin-bottom:4px}
+  .passage .by{font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .passage p{font-size:.95rem;margin-bottom:12px}
+  .passage .pnum{color:var(--purple);font-weight:900;font-size:.8rem;margin-right:4px}
+  .ptoggle{font-size:.75rem;color:var(--purple);font-weight:800;background:none;border:none;cursor:pointer;padding:4px 0;font-family:inherit}
+  .qhead{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+  .qhead .qn{font-size:.75rem;font-weight:900;color:var(--muted)}
+  .fmt{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--blue);border:1px solid rgba(59,130,246,.4);padding:.12rem .4rem;border-radius:5px}
+  .prompt{font-size:1.02rem;font-weight:800;margin:8px 0 4px;line-height:1.45}
+  .sub{font-size:.78rem;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .partlabel{font-size:.7rem;font-weight:900;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin:14px 0 4px}
+  select.cat{width:100%;background:#0d0820;border:1.5px solid var(--border);color:var(--text);border-radius:10px;padding:.55rem .6rem;font-size:.9rem;font-family:inherit;font-weight:600;margin-top:4px}
+  select.cat.correct{border-color:var(--green)}
+  select.cat.wrong{border-color:var(--red)}
+  .catrow{margin:8px 0}
+  .catrow .ctext{font-size:.9rem;font-weight:600}
+  .fb{border-radius:12px;padding:12px;margin-top:12px;font-size:.86rem;font-weight:600;line-height:1.55;border:1px solid}
+  .fb.good{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35)}
+  .fb.bad{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3)}
+  .fb.part{background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.35)}
+  .fb .v{font-weight:900;font-size:.95rem;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .fb .why{color:#e7dcff}
+  .fb .dis{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);color:var(--muted)}
+  .fb .dis b{color:#e7dcff}
+  .fb .std{margin-top:8px;font-size:.68rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+  .prog{display:flex;gap:5px;margin:10px 0 4px}
+  .prog i{flex:1;height:6px;border-radius:4px;background:var(--border)}
+  .prog i.done{background:var(--green)}
+  .prog i.cur{background:var(--purple)}
+  .kv{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.9rem}
+  .kv:last-child{border-bottom:none}
+  .kv .lab{color:var(--muted);font-weight:700}
+  .kv .val{font-weight:900}
+  .bar{height:9px;background:#0d0820;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:5px}
+  .bar>i{display:block;height:100%}
+  .note{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center;margin:18px 0 0;line-height:1.5}
+  .big{font-size:3rem;font-weight:900;line-height:1;letter-spacing:-1px}
+  .center{text-align:center}
+  .pill{display:inline-block;padding:.3rem .8rem;border-radius:999px;font-weight:900;font-size:.85rem}
+  a{color:var(--purple)}
+  hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="row">
+    <span class="brand">ElevatED U · FAST 10 ELA</span>
+    <span class="spacer"></span>
+    <span id="statusChip" class="chip">Briefing</span>
+  </div>
+  <div class="meter-wrap" id="meterWrap" style="display:none">
+    <div class="meter-labels"><span>200</span><span>PASS 246 · Level 3</span><span>262</span></div>
+    <div class="meter"><div class="fill" id="mFill"></div><div class="mark"></div><div class="cursor" id="mCursor"></div></div>
+    <div class="score-line">Projected scale score: <b id="mScore">—</b> <span id="mBand"></span></div>
+  </div>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =========================================================================
+   FAST Grade 10 ELA Reading Retake — Adaptive Cram & Mastery Simulator
+   Original, B.E.S.T.-aligned practice content. Not secure/official items.
+   ========================================================================= */
+
+var STANDARD_NAMES = {
+  "ELA.10.R.1.1":"Character, plot & theme (literary)",
+  "ELA.10.R.1.2":"Theme development",
+  "ELA.10.R.1.3":"Figurative language & literary devices",
+  "ELA.10.R.2.1":"Central idea (informational)",
+  "ELA.10.R.2.2":"Author's purpose & rhetoric",
+  "ELA.10.R.2.3":"Argument & claim analysis",
+  "ELA.10.R.2.4":"Reasoning, evidence & fallacies",
+  "ELA.10.R.3.1":"Comparing paired texts",
+  "ELA.10.R.3.3":"Multi-perspective synthesis",
+  "ELA.10.V.1.3":"Vocabulary in context"
+};
+
+/* ---- ITEM BANK: passages grouped as adaptive sets by level ---- */
+var BANK = [
+  /* ============ P1  LITERARY PROSE  L3 ============ */
+  {
+    id:"p1", level:3, genre:"Literary Prose",
+    title:"Tideline", by:"Fiction · on-grade (Level 3)",
+    paras:[
+      "For thirty-one years, Miriam had kept the lamp at Sable Point, and for thirty-one years the sea had kept its counsel. She climbed the hundred and twelve steps each dusk the way other people said their prayers—without thinking, and therefore believing more completely. The light was not hers, strictly speaking; it belonged to the Board, to the shipping lanes, to the anonymous freighters that slid past the horizon like rumors. But the keeping was hers, and she had come to understand that a thing you tend long enough becomes a thing you own, whatever the paperwork says.",
+      "Her granddaughter, Del, did not understand this. Del had arrived in June with a duffel bag and a phone that could not find a signal, and she treated the lighthouse as a sentence to be served rather than a life to be entered. “It's just a bulb now, Gran,” she said on the first night, watching the automated beacon rotate. “The Board flips a switch in an office two hundred miles away. Nobody needs you to climb anything.”",
+      "Miriam did not argue. Arguing, she had learned, was a way of admitting the other person had reached you. Instead she climbed, and after a week Del climbed too—first out of boredom, then, though the girl would never have said so, out of something closer to hunger. There was a particular quality to the top of the tower at dusk: the way the land let go of its heat, the way the water turned from hammered pewter to something darker and more honest. Up there, Del stopped checking her phone.",
+      "The night the storm came, the automated system failed. A relay somewhere drowned, and the great lamp went dark for the first time in a decade. Miriam felt the darkness before she saw it—felt the tower go quiet in a way that had nothing to do with sound. She was sixty-nine and her knees were a map of old betrayals, but she was already reaching for the manual crank when Del's hand closed over hers.",
+      "“Tell me what to do,” Del said. Not a child's question. A keeper's.",
+      "They worked the light by hand for six hours, the two of them, while the storm threw itself against the glass and the freighters, somewhere out there, found their way by a beam that no office had switched on. When dawn came gray and exhausted, Del did not mention the phone, or the signal, or the sentence she had thought she was serving. She only asked, quietly, how many steps it was to the top. “A hundred and twelve,” Miriam said. “I'll count them tomorrow,” said Del, and in the plain arithmetic of that promise, Miriam heard the sound of a thing being handed down."
+    ],
+    items:[
+      { id:"p1i1", format:"ebsr", standard:"ELA.10.R.1.2", level:3,
+        partA:{ prompt:"Part A: Which statement best identifies a central theme of “Tideline”?",
+          options:[
+            "Modern technology has made traditional forms of labor meaningless.",
+            "Responsibility that is willingly assumed can become part of one's identity and be passed to another.",
+            "Family relationships grow closest only during moments of crisis.",
+            "Isolation forces people to confront the fears they have avoided."],
+          correct:1 },
+        partB:{ prompt:"Part B: Which quotation best supports the answer to Part A?",
+          options:[
+            "“Del had arrived in June with a duffel bag and a phone that could not find a signal”",
+            "“a thing you tend long enough becomes a thing you own, whatever the paperwork says”",
+            "“the storm threw itself against the glass”",
+            "“her knees were a map of old betrayals”"],
+          correct:1 },
+        rationale:"The theme is the idea developed across the whole story, not a single event. Miriam's line that tending something makes it “yours” and the final image of the keeping being “handed down” to Del together develop the theme of chosen responsibility becoming identity.",
+        distractors:{
+          "A(A)":"Tempting because Del says the light is “just a bulb,” but the story argues against this view—it's a character's mistaken starting position, not the theme.",
+          "A(C)":"The storm brings them together, but the bond is built over weeks of climbing; “only during crisis” overstates one scene.",
+          "A(D)":"‘Isolation/fear’ is never the focus—no fear is confronted; this misreads the setting as the point.",
+          "B(A)":"Describes Del's arrival (situation), not the theme.",
+          "B(C)":"Vivid imagery of the storm—a setting detail, not thematic evidence.",
+          "B(D)":"Characterizes Miriam's age, unrelated to the theme of inheritance." } },
+      { id:"p1i2", format:"hottext", standard:"ELA.10.R.1.3", level:3,
+        prompt:"Hot-Text: Select the excerpt that best conveys, through figurative language, that Del has come to value the keeping of the light.",
+        options:[
+          "“Del had arrived in June with a duffel bag and a phone that could not find a signal.”",
+          "“‘It's just a bulb now, Gran,’ she said on the first night.”",
+          "“‘Tell me what to do,’ Del said. Not a child's question. A keeper's.”",
+          "“in the plain arithmetic of that promise, Miriam heard the sound of a thing being handed down.”"],
+        correct:3,
+        rationale:"The winning line must do two things at once: show Del's changed values AND use figurative language. The metaphor “plain arithmetic of that promise” and the image of inheritance being “handed down” convey her transformation figuratively.",
+        distractors:{
+          "1":"Literal description of her arrival—no figurative language and shows her before she changes.",
+          "2":"Shows her dismissive starting attitude; literal, and the opposite of valuing the light.",
+          "3":"Genuinely shows her change, but it is nearly literal dialogue—weak on the ‘figurative language’ requirement, which is why it's the strongest distractor." } },
+      { id:"p1i3", format:"mc", standard:"ELA.10.V.1.3", level:3,
+        prompt:"In paragraph 1, “the sea had kept its counsel.” As used here, counsel most nearly means:",
+        options:["professional or legal advice","its silence; its private secrets","a formal governing meeting","comfort offered in hardship"],
+        correct:1,
+        rationale:"Context (“kept its” + the sea being mysterious and unspeaking) signals the idiom ‘keep one's counsel’ = stay silent / hold secrets. Connotation here is mystery, not advice.",
+        distractors:{
+          "0":"The most common dictionary meaning of ‘counsel,’ which is exactly the trap—wrong for this context.",
+          "2":"Confuses ‘counsel’ with ‘council.’ The sea holds no meeting.",
+          "3":"Plausible tone (the sea as companion) but not what the idiom means." } },
+      { id:"p1i4", format:"multi", standard:"ELA.10.R.1.1", level:3, need:2,
+        prompt:"Select TWO details that best reveal why Del begins climbing the tower despite her initial resistance.",
+        options:[
+          "“first out of boredom, then … out of something closer to hunger”",
+          "“Del had arrived in June with a duffel bag”",
+          "“There was a particular quality to the top of the tower at dusk”",
+          "“The Board flips a switch in an office two hundred miles away”",
+          "“her knees were a map of old betrayals”"],
+        correct:[0,2],
+        rationale:"Both correct choices show what draws Del upward: an inner ‘hunger’ (motivation) and the pull of the tower's atmosphere at dusk (the experience that hooks her).",
+        distractors:{
+          "1":"True detail about her arrival, but it explains nothing about her motivation to climb.",
+          "3":"Del's argument for why climbing is pointless—the resistance, not the reason she overcomes it.",
+          "4":"Describes Miriam's body, not Del's motivation." } }
+    ]
+  },
+
+  /* ============ P2  INFORMATIONAL ARGUMENT  L4 ============ */
+  {
+    id:"p2", level:4, genre:"Informational · Argument",
+    title:"The Case Against the Bell", by:"Argumentative essay · Level 4",
+    paras:[
+      "Every weekday, in tens of thousands of American schools, an electronic bell severs the day into identical forty-seven-minute slices. We rarely question this rhythm, perhaps because it feels as natural as a heartbeat. But a heartbeat serves the body; the bell serves the building. It is time to admit that the fixed bell schedule is a nineteenth-century factory tool wearing a twenty-first-century uniform.",
+      "Consider what the bell actually rewards. It rewards stopping. A student who has finally, after thirty minutes of struggle, begun to understand quadratic functions is interrupted at the precise moment her understanding turns productive. The bell does not care that she was close; it cares only that four minutes remain to reach the next room. We have built a system that treats the most valuable state a learner can enter—deep, unbroken concentration—as an inconvenience to be scheduled around.",
+      "Defenders of the bell will object, reasonably, that schools must coordinate hundreds of people, and that total freedom would collapse into chaos. This is a fair concern, and I do not propose abolishing structure. I propose replacing rigid uniformity with flexible blocks: longer, subject-integrated periods that a teacher may extend or compress based on where students actually are. Chaos is not the only alternative to the bell; thoughtful design is.",
+      "The deeper cost is invisible. When we train young people, for twelve years, to associate the sound of a bell with the command to abandon whatever they are doing, we are not merely managing traffic. We are teaching a lesson—that curiosity is something you switch off on schedule. That is a strange lesson for an institution devoted to curiosity to teach. The bell is efficient. The question is whether efficiency, purchased at the price of depth, is a bargain any school should be proud to make."
+    ],
+    items:[
+      { id:"p2i1", format:"mc", standard:"ELA.10.R.2.2", level:4,
+        prompt:"Which statement best expresses the author's central claim?",
+        options:[
+          "Schools should eliminate all schedules and let students learn whenever they wish.",
+          "The rigid bell schedule undermines deep learning and should be replaced with flexible, thoughtfully designed blocks.",
+          "The bell schedule was invented in the nineteenth century for factories.",
+          "Teachers dislike being interrupted by bells during important lessons."],
+        correct:1,
+        rationale:"A central claim is the arguable position the whole essay defends. The author explicitly rejects ‘abolishing structure’ and instead argues for flexible blocks—making choice B the precise claim.",
+        distractors:{
+          "0":"An extreme version the author directly disowns (“I do not propose abolishing structure”). Distractor built from overstatement.",
+          "2":"A true supporting fact from the essay, but a detail—not the overall claim.",
+          "3":"Plausible but never stated; the essay is about learning, not teachers' preferences." } },
+      { id:"p2i2", format:"mc", standard:"ELA.10.R.2.3", level:4,
+        prompt:"In paragraph 1, the author writes, “a heartbeat serves the body; the bell serves the building.” What is the primary purpose of this contrast?",
+        options:[
+          "To prove scientifically that bells are unhealthy for students.",
+          "To concede that the bell schedule works well for most schools.",
+          "To reframe the bell as serving the institution rather than the learner, setting up the argument.",
+          "To provide a neutral definition of how school schedules function."],
+        correct:2,
+        rationale:"This is a rhetorical antithesis. By pairing ‘body’ with ‘building,’ the author shifts the reader's view: the bell serves the system, not the student—priming the essay's critique.",
+        distractors:{
+          "0":"Mistakes a rhetorical figure for a scientific proof; no health data is offered.",
+          "1":"The opposite of the author's purpose—this is criticism, not concession.",
+          "3":"‘Neutral definition’ ignores the clearly persuasive, loaded contrast." } },
+      { id:"p2i3", format:"hottext", standard:"ELA.10.R.2.4", level:4,
+        prompt:"Hot-Text: Select the sentence in which the author concedes a point to the opposing side before answering it.",
+        options:[
+          "“It rewards stopping.”",
+          "“Defenders of the bell will object, reasonably, that schools must coordinate hundreds of people, and that total freedom would collapse into chaos.”",
+          "“The bell is efficient.”",
+          "“That is a strange lesson for an institution devoted to curiosity to teach.”"],
+        correct:1,
+        rationale:"A concession acknowledges a legitimate opposing point. The author calls the objection ‘reasonable’ and grants that coordination matters—then refutes it with the ‘flexible blocks’ solution. That is textbook concession-and-rebuttal.",
+        distractors:{
+          "0":"A blunt criticism of the bell—no acknowledgment of the other side.",
+          "2":"A concession in tone, but it concedes to the author's own critique setup, not to the opposition's strongest point (coordination). Strong distractor.",
+          "3":"An assertion of the author's position, not a concession." } },
+      { id:"p2i4", format:"multi", standard:"ELA.10.R.2.4", level:4, need:2,
+        prompt:"Select TWO ways the author supports the argument that the bell harms learning.",
+        options:[
+          "A concrete scenario of a student interrupted mid-understanding of quadratics.",
+          "Statistics from a national study of test-score declines.",
+          "An appeal to the long-term effect of training students to ‘switch off’ curiosity.",
+          "Expert quotations from named education researchers.",
+          "A personal anecdote about the author's own school days."],
+        correct:[0,2],
+        rationale:"The essay relies on a vivid hypothetical example (the quadratics student) and a logical appeal about cumulative conditioning over twelve years—both present in the text.",
+        distractors:{
+          "1":"No statistics appear—tempting because arguments often use them, but this one doesn't.",
+          "3":"No named experts are quoted; be careful not to import evidence the text lacks.",
+          "4":"There is no first-person school anecdote; the ‘we’ is rhetorical, not autobiographical." } }
+    ]
+  },
+
+  /* ============ P3  PAIRED TEXTS  L4  (synthesis) ============ */
+  {
+    id:"p3", level:4, genre:"Paired Texts",
+    title:"Should Cities Trade Lawns for Meadows?", by:"Paired informational texts · Level 4",
+    paras:[
+      "<b>Text 1 — “Let It Grow”</b>",
+      "The American lawn is a monument to effort spent against nature. We pour billions of gallons of water and tons of fertilizer into a crop we are forbidden to harvest, all to keep it uniformly, unnaturally short. Replacing municipal lawns with native meadows would reverse this waste overnight. Meadows need no mowing, little water, and no chemicals; they feed pollinators, cool the air, and turn sterile green rectangles into living systems. The objection that meadows look ‘messy’ is not an argument—it is a habit. Beauty, like the lawn itself, is something a culture learns, and it can learn something better.",
+      "<b>Text 2 — “Not So Fast”</b>",
+      "I am no defender of the wasteful lawn, and I agree cities should reduce mowing and watering. But ‘plant a meadow and walk away’ is a fantasy. A neglected meadow does not become a wildflower painting; it becomes a stand of invasive weeds that crowds out the very natives it was meant to shelter. Real meadows demand skilled management—seasonal burns or cuts, weeding, replanting—work that many strapped city budgets cannot sustain. The goal is right; the timeline is naive. Without a maintenance plan and trained staff, a ‘native meadow’ is just a failure with better public relations."
+    ],
+    items:[
+      { id:"p3i1", format:"mc", standard:"ELA.10.R.3.1", level:4,
+        prompt:"Which choice best describes how the two authors' positions differ?",
+        options:[
+          "Text 1 supports meadows while Text 2 opposes reducing lawns entirely.",
+          "Both authors defend traditional lawns for different reasons.",
+          "Text 1 sees meadows as low-maintenance, while Text 2 argues they require significant ongoing management.",
+          "Text 2 supports meadows more enthusiastically than Text 1."],
+        correct:2,
+        rationale:"Both authors dislike lawns—the real difference is maintenance. Text 1 emphasizes ‘no mowing, little water’; Text 2 insists meadows ‘demand skilled management.’ That contrast is the axis of disagreement.",
+        distractors:{
+          "0":"Misreads Text 2, which explicitly supports reducing lawns—it objects to the how, not the goal.",
+          "1":"Neither author defends the lawn; both criticize it.",
+          "3":"Reverses the texts; Text 1 is the enthusiastic one." } },
+      { id:"p3i2", format:"ebsr", standard:"ELA.10.R.3.3", level:4,
+        partA:{ prompt:"Part A: On which point would BOTH authors most likely agree?",
+          options:[
+            "Native meadows can simply be planted and left alone.",
+            "The conventional lawn is wasteful and should be reduced.",
+            "City budgets are adequate to maintain meadows.",
+            "The appearance of meadows is the most important issue."],
+          correct:1 },
+        partB:{ prompt:"Part B: Which pair of quotations best shows this shared view?",
+          options:[
+            "“feed pollinators, cool the air” (Text 1) and “seasonal burns or cuts” (Text 2)",
+            "“a monument to effort spent against nature” (Text 1) and “I am no defender of the wasteful lawn” (Text 2)",
+            "“beauty … is something a culture learns” (Text 1) and “better public relations” (Text 2)",
+            "“no mowing, little water” (Text 1) and “a fantasy” (Text 2)"],
+          correct:1 },
+        rationale:"Synthesis means finding genuine common ground. Both condemn the lawn: Text 1 calls it ‘a monument to effort spent against nature,’ and Text 2 opens ‘I am no defender of the wasteful lawn.’ The Part B pair must jointly prove that shared stance.",
+        distractors:{
+          "A(A)":"This is Text 1's view that Text 2 attacks as ‘a fantasy’—a disagreement, not agreement.",
+          "A(C)":"Text 2 says the opposite (budgets often can't sustain the work).",
+          "A(D)":"Only Text 1 foregrounds appearance; Text 2 downplays it.",
+          "B(A)":"Two benefits/tasks that don't establish the shared anti-lawn stance.",
+          "B(C)":"Unrelated lines about beauty and PR—not shared ground.",
+          "B(D)":"These quotations mark the disagreement about maintenance, not agreement." } },
+      { id:"p3i3", format:"mc", standard:"ELA.10.R.3.1", level:5,
+        prompt:"How does the author of Text 2 use the phrase “with better public relations” to respond to Text 1?",
+        options:[
+          "To praise meadows for improving a city's image.",
+          "To suggest that an unmaintained meadow is still an environmental failure, only disguised by good intentions.",
+          "To agree that appearance is what matters most.",
+          "To recommend hiring public-relations staff for parks."],
+        correct:1,
+        rationale:"The phrase is ironic. Text 2 concedes meadows sound virtuous but argues that without maintenance the result is ‘just a failure with better public relations’—i.e., a failure that markets itself well. This directly counters Text 1's optimism.",
+        distractors:{
+          "0":"Reads the irony as literal praise—the reverse of the author's intent.",
+          "2":"The author minimizes appearance, not elevates it.",
+          "3":"Absurdly literal; ‘public relations’ is figurative here." } }
+    ]
+  },
+
+  /* ============ P4  POETRY  L4 ============ */
+  {
+    id:"p4", level:4, genre:"Poetry",
+    title:"Inheritance", by:"Poem · Level 4",
+    paras:[
+      "<i>My grandmother's hands were two worn maps,</i>",
+      "<i>each crease a road she walked so I would not—</i>",
+      "<i>knuckles like river stones, the kind that stop</i>",
+      "<i>a current just enough to make it sing.</i>",
+      "<i>She never spoke of hardship. She just cooked,</i>",
+      "<i>and in the steam that rose from every pot</i>",
+      "<i>the kitchen filled with everything unsaid.</i>",
+      "<i>Now my own hands are learning the same routes.</i>",
+      "<i>I did not choose the map. It chose the hand.</i>"
+    ],
+    items:[
+      { id:"p4i1", format:"mc", standard:"ELA.10.R.1.3", level:4,
+        prompt:"The poem compares the grandmother's hands to “two worn maps.” What does this metaphor most strongly suggest?",
+        options:[
+          "The grandmother traveled to many countries.",
+          "Her hands recorded a lifetime of effort and hard journeys endured for others.",
+          "The grandmother was skilled at reading directions.",
+          "Her hands were fragile and easily damaged."],
+        correct:1,
+        rationale:"The metaphor is extended: ‘each crease a road she walked so I would not.’ The maps stand for a life of labor whose ‘roads’ were traveled to spare the grandchild—sacrifice recorded in the body.",
+        distractors:{
+          "0":"Takes ‘maps’ literally as travel; ignores ‘so I would not.’",
+          "2":"Confuses ‘map’ the object with map-reading skill.",
+          "3":"‘Worn’ suggests use and endurance, not fragility." } },
+      { id:"p4i2", format:"hottext", standard:"ELA.10.R.1.3", level:5,
+        prompt:"Hot-Text: Select the line where the poem's focus shifts from the grandmother to the speaker, signaling the theme of inheritance.",
+        options:[
+          "“knuckles like river stones, the kind that stop”",
+          "“She never spoke of hardship. She just cooked,”",
+          "“the kitchen filled with everything unsaid.”",
+          "“Now my own hands are learning the same routes.”"],
+        correct:3,
+        rationale:"‘Now my own hands’ pivots the poem from the grandmother's past to the speaker's present—the structural turn that delivers the inheritance theme.",
+        distractors:{
+          "0":"A simile still describing the grandmother—before the shift.",
+          "1":"Characterizes the grandmother's silence; no shift yet.",
+          "2":"A powerful image, but still about her kitchen—the turn comes in the next line." } },
+      { id:"p4i3", format:"mc", standard:"ELA.10.R.1.2", level:5,
+        prompt:"Which statement best expresses a theme developed by the poem's final line, “I did not choose the map. It chose the hand”?",
+        options:[
+          "People should resist the traditions their families pass down.",
+          "Legacy is often inherited without conscious choice, shaping who we become.",
+          "Maps are more reliable than memory.",
+          "Cooking is the most important family tradition."],
+        correct:1,
+        rationale:"Reversing ‘I chose’ into ‘it chose the hand’ gives inheritance its own agency: the speaker is claimed by a legacy rather than selecting it—the poem's culminating idea.",
+        distractors:{
+          "0":"The tone is acceptance, even reverence—not resistance.",
+          "2":"Literalizes the metaphor and ignores the human theme.",
+          "3":"Cooking is the vehicle, not the theme itself." } }
+    ]
+  },
+
+  /* ============ P5  INFORMATIONAL  L2  (diagnostic / easier) ============ */
+  {
+    id:"p5", level:2, genre:"Informational",
+    title:"The Dance of the Honeybee", by:"Informational text · Level 2 (foundational)",
+    paras:[
+      "When a honeybee finds a rich patch of flowers, it does not keep the discovery to itself. It returns to the hive and performs a movement scientists call the “waggle dance.” The bee runs in a straight line while shaking its body, then circles back and repeats the pattern, tracing a shape like the number eight.",
+      "This dance is a message. The direction of the straight run tells other bees which way to fly, measured against the position of the sun. The length of the waggle tells them how far to go—a longer waggle means a longer journey. In this way, a single bee can send the whole hive to a food source it has never seen.",
+      "For a long time, scientists doubted that such a small creature could share such exact information. But careful experiments confirmed it: bees really do read the dance and find the flowers. The waggle dance remains one of the clearest examples of communication in the animal world."
+    ],
+    items:[
+      { id:"p5i1", format:"mc", standard:"ELA.10.R.2.1", level:2,
+        prompt:"What is the central idea of the passage?",
+        options:[
+          "Honeybees prefer flowers that are far from the hive.",
+          "The waggle dance is a precise way honeybees communicate the location of food.",
+          "Scientists have always understood how bees behave.",
+          "Bees trace the number eight for no clear reason."],
+        correct:1,
+        rationale:"The central idea is what the whole passage is about: the waggle dance as a precise communication system. Every paragraph supports this.",
+        distractors:{
+          "0":"A misread detail; distance is one thing the dance encodes, not the main point.",
+          "2":"Contradicted by ‘scientists doubted’—they did not always understand it.",
+          "3":"The passage explains the reason clearly, so ‘no clear reason’ is false." } },
+      { id:"p5i2", format:"mc", standard:"ELA.10.V.1.3", level:2,
+        prompt:"In paragraph 2, the word “exact” most nearly means:",
+        options:["difficult","precise","friendly","distant"],
+        correct:1,
+        rationale:"Context: the dance encodes specific direction and distance. ‘Exact’ = precise, accurate information.",
+        distractors:{
+          "0":"The information may be complex, but ‘exact’ means precise, not hard.",
+          "2":"Unrelated tone.",
+          "3":"Echoes ‘far away’ from the passage but is not the meaning of ‘exact.’" } },
+      { id:"p5i3", format:"categorize", standard:"ELA.10.R.2.1", level:3,
+        prompt:"Categorize each statement as the passage's CENTRAL IDEA or a SUPPORTING DETAIL.",
+        categories:["Central Idea","Supporting Detail"],
+        rows:[
+          { text:"The waggle dance lets a bee tell the hive where to find food.", cat:0 },
+          { text:"The length of the waggle shows how far away the food is.", cat:1 },
+          { text:"The direction of the straight run is measured against the sun.", cat:1 },
+          { text:"The dance is one of the clearest examples of animal communication.", cat:0 }],
+        rationale:"Central-idea statements summarize the whole passage (the dance communicates food location; it's a prime example of animal communication). Supporting details are the specific mechanics (length = distance; direction vs. sun).",
+        distractors:{} }
+    ]
+  },
+
+  /* ============ P6  LITERARY PROSE  L5  (subtle intent / irony) ============ */
+  {
+    id:"p6", level:5, genre:"Literary Prose",
+    title:"The Reference", by:"Fiction · Level 5 (high complexity)",
+    paras:[
+      "Mr. Alden was, everyone agreed, the most generous manager the firm had ever known. He wrote letters of recommendation for departing employees with a warmth that brought tears to their eyes—letters so glowing that the employees rarely noticed how quickly he agreed to write them, or how the finest praise always attached itself to those he was most eager to see go.",
+      "“I simply hate to lose you,” he told young Pearson, sliding the sealed envelope across the desk with both hands, the way one returns something borrowed. “But a talent like yours—well, it would be selfish of me to stand in your way.” Pearson, who had spent two years suspecting he was invisible, walked out into the afternoon feeling, for the first time, seen. He did not open the envelope. It seemed almost rude to check.",
+      "The firm's efficiency improved every quarter. Mr. Alden was often praised for his eye for talent, and he accepted the praise modestly, noting that he had merely helped good people find where they truly belonged. It was true. He had. Somewhere else."
+    ],
+    items:[
+      { id:"p6i1", format:"ebsr", standard:"ELA.10.R.2.3", level:5,
+        partA:{ prompt:"Part A: What is the author's true attitude toward Mr. Alden's “generosity”?",
+          options:[
+            "Admiring — he is a rare and kind leader.",
+            "Ironic — his ‘generosity’ is a polished method for pushing out unwanted staff.",
+            "Confused — the author cannot decide what Mr. Alden intends.",
+            "Fearful — the author warns that Mr. Alden is dangerous."],
+          correct:1 },
+        partB:{ prompt:"Part B: Which detail best reveals this attitude?",
+          options:[
+            "“the most generous manager the firm had ever known”",
+            "“the finest praise always attached itself to those he was most eager to see go”",
+            "“Pearson … walked out into the afternoon feeling, for the first time, seen”",
+            "“The firm's efficiency improved every quarter.”"],
+          correct:1 },
+        rationale:"The story is built on dramatic irony: the surface calls Alden generous while the details reveal manipulation. The clause that his best praise ‘attached itself to those he was most eager to see go’ exposes the true purpose behind the flattery.",
+        distractors:{
+          "A(A)":"Takes the narrator's surface praise at face value—exactly what the irony sets up to subvert.",
+          "A(C)":"There's no confusion; the irony is controlled and deliberate.",
+          "A(D)":"Alden is manipulative, but the tone is wry, not fearful.",
+          "B(A)":"The ironic surface statement, not the detail that undercuts it.",
+          "B(C)":"Shows Pearson's feeling (the victim's view), not the author's judgment of Alden.",
+          "B(D)":"Ambiguous on its own—efficiency could be innocent; it doesn't reveal intent as directly." } },
+      { id:"p6i2", format:"hottext", standard:"ELA.10.R.1.3", level:5,
+        prompt:"Hot-Text: Select the final phrase whose placement and brevity deliver the story's ironic ‘punch line.’",
+        options:[
+          "“The firm's efficiency improved every quarter.”",
+          "“he had merely helped good people find where they truly belonged.”",
+          "“It was true. He had.”",
+          "“Somewhere else.”"],
+        correct:3,
+        rationale:"The two-word fragment ‘Somewhere else’ is isolated for effect: it snaps the euphemism (‘where they truly belonged’) into its real meaning—away from the firm. Structure (a short final sentence) creates the ironic reveal.",
+        distractors:{
+          "0":"Sets up the irony but is a plain statement, not the punch.",
+          "1":"The euphemism that the punch line detonates—close, but it's the setup.",
+          "2":"Builds suspense, yet the payoff lands only in the next fragment." } },
+      { id:"p6i3", format:"mc", standard:"ELA.10.R.1.1", level:5,
+        prompt:"Pearson “did not open the envelope. It seemed almost rude to check.” What does this detail most reveal about Pearson?",
+        options:[
+          "He is careless about important documents.",
+          "His hunger to feel valued makes him trust Alden completely, blinding him to the truth.",
+          "He already knows the letter is worthless.",
+          "He plans to frame the letter rather than use it."],
+        correct:1,
+        rationale:"Characterization through action: Pearson, starved for recognition (‘for the first time, seen’), won't check the letter because doubting it would spoil the feeling. His need makes him the perfect target for Alden's flattery.",
+        distractors:{
+          "0":"Reduces a psychological moment to mere carelessness.",
+          "2":"The opposite—he suspects nothing; that's the point.",
+          "3":"Invents a motive not supported anywhere in the text." } }
+    ]
+  }
+];
+
+/* ---------------- ENGINE ---------------- */
+var MAX_SETS = 5;
+var state = {
+  screen:"briefing",
+  targetLevel:3,
+  usedPassages:{},
+  setsDone:0,
+  queue:[],           // items for current passage
+  qIndex:0,
+  passage:null,
+  setResults:[],      // fractions for current passage
+  responses:[],       // {std,level,frac}
+  perStd:{}
+};
+
+function pickPassage(target){
+  var best=null,bestDist=99;
+  for(var i=0;i<BANK.length;i++){
+    var p=BANK[i];
+    if(state.usedPassages[p.id]) continue;
+    var d=Math.abs(p.level-target);
+    if(d<bestDist){bestDist=d;best=p;}
+  }
+  return best;
+}
+
+function startExam(){
+  state.screen="exam";
+  document.getElementById("meterWrap").style.display="block";
+  loadNextPassage();
+}
+function loadNextPassage(){
+  var p=pickPassage(state.targetLevel);
+  if(!p || state.setsDone>=MAX_SETS){ showResults(); return; }
+  state.usedPassages[p.id]=true;
+  state.passage=p;
+  state.queue=p.items.slice();
+  state.qIndex=0;
+  state.setResults=[];
+  render();
+}
+
+function recordResponse(std,level,frac){
+  state.responses.push({std:std,level:level,frac:frac});
+  if(!state.perStd[std]) state.perStd[std]={sum:0,n:0};
+  state.perStd[std].sum+=frac; state.perStd[std].n++;
+  state.setResults.push(frac);
+}
+
+function projectedScore(){
+  if(state.responses.length===0) return null;
+  var earned=0,possible=0,lvlSum=0;
+  for(var i=0;i<state.responses.length;i++){
+    var r=state.responses[i];
+    earned+=r.frac*r.level; possible+=r.level; lvlSum+=r.level;
+  }
+  var wAcc=possible>0?earned/possible:0;
+  var avgLevel=lvlSum/state.responses.length;
+  var score=Math.round(208 + wAcc*48 + (avgLevel-3)*5);
+  if(score<200)score=200; if(score>262)score=262;
+  return score;
+}
+function bandFor(score){
+  if(score>=252) return {t:"Passing comfortably",c:"var(--green)"};
+  if(score>=246) return {t:"On track — Level 3",c:"var(--green)"};
+  if(score>=240) return {t:"Approaching — push harder",c:"var(--orange)"};
+  return {t:"Below pass line — remediate",c:"var(--red)"};
+}
+function updateMeter(){
+  var s=projectedScore();
+  var fill=document.getElementById("mFill");
+  var cur=document.getElementById("mCursor");
+  var sc=document.getElementById("mScore");
+  var bd=document.getElementById("mBand");
+  if(s===null){sc.textContent="—";return;}
+  var pct=((s-200)/62)*100; if(pct<0)pct=0; if(pct>100)pct=100;
+  fill.style.width=pct+"%";
+  cur.style.left=pct+"%";
+  sc.textContent=s;
+  var b=bandFor(s);
+  bd.textContent="· "+b.t; bd.style.color=b.c;
+}
+
+/* ---------------- RENDER ---------------- */
+var app=document.getElementById("app");
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+var passageOpen=true;
+
+function setChip(t){document.getElementById("statusChip").textContent=t;}
+
+function render(){
+  app.innerHTML="";
+  var p=state.passage, it=state.queue[state.qIndex];
+  setChip("Set "+(state.setsDone+1)+" · Q"+(state.qIndex+1)+"/"+state.queue.length+" · L"+p.level);
+  updateMeter();
+
+  // passage card (collapsible)
+  var pc=el("div","passage");
+  var head=el("div");
+  head.appendChild(el("h3",null,p.title));
+  head.appendChild(el("div","by",p.genre+" · "+p.by));
+  pc.appendChild(head);
+  var body=el("div");
+  for(var i=0;i<p.paras.length;i++){
+    var isVerse=p.genre==="Poetry";
+    var pref = (!isVerse && !/^<b>|^<i>/.test(p.paras[i])) ? '<span class="pnum">'+(countableIndex(p,i))+'</span>' : '';
+    body.appendChild(el("p",null,pref+p.paras[i]));
+  }
+  pc.appendChild(body);
+  var tgl=el("button","ptoggle", passageOpen?"▾ Hide passage":"▸ Show passage");
+  tgl.onclick=function(){passageOpen=!passageOpen;body.style.display=passageOpen?"block":"none";tgl.textContent=passageOpen?"▾ Hide passage":"▸ Show passage";};
+  body.style.display=passageOpen?"block":"none";
+  pc.insertBefore(tgl, body);
+  app.appendChild(pc);
+
+  // progress dots for this set
+  var pr=el("div","prog");
+  for(var j=0;j<state.queue.length;j++){
+    var d=el("i",j<state.qIndex?"done":(j===state.qIndex?"cur":""));
+    pr.appendChild(d);
+  }
+  app.appendChild(pr);
+
+  // item card
+  app.appendChild(renderItem(it));
+  window.scrollTo(0,0);
+}
+function countableIndex(p,i){
+  // paragraph number ignoring heading-only lines
+  var n=0;
+  for(var k=0;k<=i;k++){ if(!/^<b>|^<i>/.test(p.paras[k])) n++; }
+  return n;
+}
+
+function fmtLabel(f){
+  return {mc:"Multiple Choice",multi:"Multi-Select",ebsr:"EBSR · Part A/B",hottext:"Hot-Text",categorize:"Categorize"}[f]||f;
+}
+
+function renderItem(it){
+  var card=el("div","card");
+  var qh=el("div","qhead");
+  qh.appendChild(el("span","qn","Question "+(state.qIndex+1)));
+  qh.appendChild(el("span","fmt",fmtLabel(it.format)));
+  card.appendChild(qh);
+
+  var answered=false;
+  var submit=el("button","btn","Submit Answer");
+  submit.disabled=true;
+
+  if(it.format==="mc"||it.format==="hottext"){
+    card.appendChild(el("div","prompt",it.prompt));
+    var sel=-1;
+    var ul=el("div","list");
+    it.options.forEach(function(o,idx){
+      var li=el("div","opt");
+      li.appendChild(el("span","k",String.fromCharCode(65+idx)));
+      li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(answered)return; sel=idx; [].forEach.call(ul.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); submit.disabled=false; };
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    submit.onclick=function(){
+      if(sel<0||answered)return; answered=true; submit.style.display="none";
+      var correct=(sel===it.correct); var frac=correct?1:0;
+      [].forEach.call(ul.children,function(c,idx){
+        c.classList.add("disabled"); c.classList.remove("sel");
+        if(idx===it.correct)c.classList.add("correct");
+        else if(idx===sel)c.classList.add("wrong");
+      });
+      recordResponse(it.standard,it.level,frac); updateMeter();
+      card.appendChild(feedback(it,correct?"good":"bad",correct?"Correct":"Not quite",selDistractKey(it,sel)));
+      card.appendChild(nextBtn());
+    };
+  }
+  else if(it.format==="multi"){
+    card.appendChild(el("div","prompt",it.prompt));
+    card.appendChild(el("div","sub","Select "+it.need+"."));
+    var picks={};
+    var ul2=el("div","list");
+    it.options.forEach(function(o,idx){
+      var li=el("div","opt");
+      li.appendChild(el("span","k",String.fromCharCode(65+idx)));
+      li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(answered)return;
+        if(picks[idx]){delete picks[idx];li.classList.remove("sel");}
+        else{ if(Object.keys(picks).length>=it.need)return; picks[idx]=true; li.classList.add("sel"); }
+        submit.disabled=(Object.keys(picks).length!==it.need);
+      };
+      ul2.appendChild(li);
+    });
+    card.appendChild(ul2);
+    submit.onclick=function(){
+      if(answered)return; answered=true; submit.style.display="none";
+      var chosen=Object.keys(picks).map(Number);
+      var correctSet=it.correct;
+      var hit=0; chosen.forEach(function(c){ if(correctSet.indexOf(c)>=0)hit++; });
+      var frac=hit/it.need;
+      [].forEach.call(ul2.children,function(c,idx){
+        c.classList.add("disabled"); c.classList.remove("sel");
+        if(correctSet.indexOf(idx)>=0)c.classList.add("correct");
+        else if(chosen.indexOf(idx)>=0)c.classList.add("wrong");
+      });
+      recordResponse(it.standard,it.level,frac); updateMeter();
+      var v=frac===1?"Correct — both right":(frac>0?"Partially correct":"Not quite");
+      card.appendChild(feedback(it,frac===1?"good":(frac>0?"part":"bad"),v,null));
+      card.appendChild(nextBtn());
+    };
+  }
+  else if(it.format==="ebsr"){
+    card.appendChild(el("div","partlabel","Part A"));
+    card.appendChild(el("div","prompt",it.partA.prompt));
+    var selA=-1;
+    var ulA=el("div","list");
+    it.partA.options.forEach(function(o,idx){
+      var li=el("div","opt");
+      li.appendChild(el("span","k",String.fromCharCode(65+idx)));
+      li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(answered)return; selA=idx; [].forEach.call(ulA.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); checkReady(); };
+      ulA.appendChild(li);
+    });
+    card.appendChild(ulA);
+    card.appendChild(el("div","partlabel","Part B"));
+    card.appendChild(el("div","prompt",it.partB.prompt));
+    var selB=-1;
+    var ulB=el("div","list");
+    it.partB.options.forEach(function(o,idx){
+      var li=el("div","opt");
+      li.appendChild(el("span","k",String.fromCharCode(65+idx)));
+      li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(answered)return; selB=idx; [].forEach.call(ulB.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); checkReady(); };
+      ulB.appendChild(li);
+    });
+    card.appendChild(ulB);
+    function checkReady(){ submit.disabled=!(selA>=0&&selB>=0); }
+    submit.onclick=function(){
+      if(answered)return; answered=true; submit.style.display="none";
+      var aOK=(selA===it.partA.correct), bOK=(selB===it.partB.correct);
+      var frac=(aOK&&bOK)?1:((aOK||bOK)?0.5:0);
+      mark(ulA,selA,it.partA.correct); mark(ulB,selB,it.partB.correct);
+      recordResponse(it.standard,it.level,frac); updateMeter();
+      var v=frac===1?"Full credit — A + B":(frac===0.5?"Half credit — only one part":"Not quite");
+      var extra="<b>Scoring:</b> On FAST EBSR, your evidence (Part B) must match your analysis (Part A). Both must be right for full credit.";
+      card.appendChild(feedback(it,frac===1?"good":(frac===0.5?"part":"bad"),v,null,extra));
+      card.appendChild(nextBtn());
+    };
+    function mark(ul,sel,cor){ [].forEach.call(ul.children,function(c,idx){ c.classList.add("disabled");c.classList.remove("sel"); if(idx===cor)c.classList.add("correct"); else if(idx===sel)c.classList.add("wrong"); }); }
+  }
+  else if(it.format==="categorize"){
+    card.appendChild(el("div","prompt",it.prompt));
+    var selects=[];
+    it.rows.forEach(function(row,idx){
+      var r=el("div","catrow");
+      r.appendChild(el("div","ctext","• "+row.text));
+      var s=el("select","cat");
+      var def=el("option",null,"— choose —"); def.value=""; s.appendChild(def);
+      it.categories.forEach(function(cat,ci){ var op=el("option",null,cat); op.value=ci; s.appendChild(op); });
+      s.onchange=function(){ var all=selects.every(function(x){return x.value!=="";}); submit.disabled=!all; };
+      selects.push(s); r.appendChild(s); card.appendChild(r);
+    });
+    submit.onclick=function(){
+      if(answered)return; answered=true; submit.style.display="none";
+      var hit=0;
+      selects.forEach(function(s,idx){
+        var chosen=parseInt(s.value,10); var cor=it.rows[idx].cat;
+        s.disabled=true;
+        if(chosen===cor){s.classList.add("correct");hit++;}
+        else{s.classList.add("wrong"); s.appendChild(optCorrect(it.categories[cor]));}
+      });
+      var frac=hit/it.rows.length;
+      recordResponse(it.standard,it.level,frac); updateMeter();
+      var v=frac===1?"Correct — all placed":(frac>0?("Partially correct — "+hit+"/"+it.rows.length):"Not quite");
+      card.appendChild(feedback(it,frac===1?"good":(frac>0?"part":"bad"),v,null));
+      card.appendChild(nextBtn());
+    };
+  }
+
+  card.appendChild(submit);
+  return card;
+}
+function optCorrect(txt){var o=document.createElement("option");o.textContent=" ✓ correct: "+txt;o.disabled=true;return o;}
+
+function selDistractKey(it,sel){
+  // returns a distractor note string for the chosen wrong option, if any
+  if(it.format==="hottext"||it.format==="mc"){
+    if(sel===it.correct) return null;
+    return it.distractors?it.distractors[String(sel)]:null;
+  }
+  return null;
+}
+
+function feedback(it,cls,verdict,distractNote,extraHtml){
+  var f=el("div","fb "+cls);
+  var icon=cls==="good"?"✅":(cls==="part"?"◐":"❌");
+  f.appendChild(el("div","v",icon+" "+verdict));
+  f.appendChild(el("div","why","<b>Why:</b> "+it.rationale));
+  if(extraHtml) f.appendChild(el("div","why",extraHtml));
+  if(distractNote){ f.appendChild(el("div","dis","<b>Your choice:</b> "+distractNote)); }
+  f.appendChild(el("div","std",it.standard+" · "+(STANDARD_NAMES[it.standard]||"")));
+  return f;
+}
+
+function nextBtn(){
+  var last=(state.qIndex>=state.queue.length-1);
+  var b=el("button","btn gold",last?"Finish this set →":"Next question →");
+  b.style.marginTop="10px";
+  b.onclick=function(){
+    if(state.qIndex<state.queue.length-1){ state.qIndex++; render(); }
+    else{ endSet(); }
+  };
+  return b;
+}
+
+function endSet(){
+  // adapt difficulty based on set accuracy
+  var acc = state.setResults.reduce(function(a,b){return a+b;},0)/state.setResults.length;
+  state.setsDone++;
+  var old=state.targetLevel;
+  if(acc>=0.7) state.targetLevel=Math.min(5,state.targetLevel+1);
+  else if(acc<0.5) state.targetLevel=Math.max(2,state.targetLevel-1);
+  showSetBreak(acc,old,state.targetLevel);
+}
+
+function showSetBreak(acc,old,neo){
+  app.innerHTML="";
+  setChip("Set "+state.setsDone+" complete");
+  updateMeter();
+  var c=el("div","card center");
+  var pctv=Math.round(acc*100);
+  c.appendChild(el("div","big",pctv+"%"));
+  c.appendChild(el("div","lead","Set "+state.setsDone+" accuracy"));
+  var dir = neo>old ? "↑ Escalating to Level "+neo+" — harder texts & subtler questions." :
+            neo<old ? "↓ Adapting to Level "+neo+" — rebuilding the foundation with targeted items." :
+            "→ Holding at Level "+neo+" — dialing in.";
+  var col = neo>old?"var(--green)":(neo<old?"var(--orange)":"var(--muted)");
+  var pill=el("div","pill",dir); pill.style.background="rgba(139,92,246,.12)"; pill.style.border="1px solid var(--border)"; pill.style.color=col; pill.style.fontSize=".8rem";
+  c.appendChild(pill);
+  var s=projectedScore();
+  c.appendChild(el("p",null,"<br>Projected scale score: <b style='color:"+bandFor(s).c+"'>"+s+"</b> / 246 to pass"));
+  app.appendChild(c);
+  var done=(state.setsDone>=MAX_SETS)||!pickPassage(state.targetLevel);
+  var b=el("button","btn",done?"See my full results →":"Continue to Set "+(state.setsDone+1)+" →");
+  b.onclick=function(){ if(done)showResults(); else loadNextPassage(); };
+  app.appendChild(b);
+  window.scrollTo(0,0);
+}
+
+function showResults(){
+  state.screen="results";
+  app.innerHTML="";
+  setChip("Results");
+  var s=projectedScore(); var band=bandFor(s);
+  updateMeter();
+
+  var head=el("div","card center");
+  head.appendChild(el("div","lead","Predicted FAST Scale Score"));
+  var big=el("div","big",String(s)); big.style.color=band.c;
+  head.appendChild(big);
+  var pass=s>=246;
+  var pill=el("div","pill",(pass?"✓ ":"⚠ ")+band.t);
+  pill.style.background=pass?"rgba(34,197,94,.14)":"rgba(249,115,22,.14)";
+  pill.style.color=band.c; pill.style.border="1px solid "+band.c; pill.style.marginTop="8px";
+  head.appendChild(pill);
+  head.appendChild(el("p","lead","<br>Passing requires <b>246 (Level 3)</b>. "+(pass?"You're projecting a pass — keep this pace and lock it in.":"You're "+(246-s)+" points short. The gaps below are exactly where those points are hiding.")));
+  app.appendChild(head);
+
+  // per-standard breakdown
+  var sc=el("div","card");
+  sc.appendChild(el("h2",null,"Standard-by-Standard"));
+  var keys=Object.keys(state.perStd);
+  keys.sort(function(a,b){ return (state.perStd[a].sum/state.perStd[a].n)-(state.perStd[b].sum/state.perStd[b].n); });
+  keys.forEach(function(k){
+    var o=state.perStd[k]; var pct=Math.round((o.sum/o.n)*100);
+    var col=pct<60?"var(--red)":(pct<80?"var(--orange)":"var(--green)");
+    var row=el("div"); row.style.margin="10px 0";
+    var top=el("div"); top.style.display="flex"; top.style.justifyContent="space-between"; top.style.fontSize=".8rem"; top.style.fontWeight="800";
+    top.innerHTML="<span>"+k+" · <span style='color:var(--muted);font-weight:700'>"+(STANDARD_NAMES[k]||"")+"</span></span><span style='color:"+col+"'>"+pct+"%</span>";
+    row.appendChild(top);
+    var bar=el("div","bar"); var fill=el("i"); fill.style.width=pct+"%"; fill.style.background=col; bar.appendChild(fill); row.appendChild(bar);
+    sc.appendChild(row);
+  });
+  app.appendChild(sc);
+
+  // focus plan
+  var weak=keys.slice(0,3).filter(function(k){return (state.perStd[k].sum/state.perStd[k].n)<0.8;});
+  var plan=el("div","card");
+  plan.appendChild(el("h2",null,"🎯 Your Cram Focus"));
+  if(weak.length===0){
+    plan.appendChild(el("p","lead","Balanced and strong across the board. Do one more full run at Level 4–5 to build a cushion above 246."));
+  } else {
+    var ul=el("ul"); ul.style.paddingLeft="18px"; ul.style.fontSize=".9rem"; ul.style.fontWeight="600";
+    weak.forEach(function(k){
+      var tip=FOCUS_TIPS[k]||"Re-read the passage before answering; anchor every choice to a specific line.";
+      var li=document.createElement("li"); li.style.margin="8px 0";
+      li.innerHTML="<b>"+(STANDARD_NAMES[k]||k)+"</b> ("+k+"): "+tip;
+      ul.appendChild(li);
+    });
+    plan.appendChild(ul);
+  }
+  app.appendChild(plan);
+
+  var again=el("button","btn","Run a fresh adaptive set →");
+  again.onclick=function(){ resetAll(); };
+  app.appendChild(again);
+  var b2=el("button","btn ghost","Back to strategy briefing");
+  b2.style.marginTop="8px";
+  b2.onclick=function(){ resetAll(true); };
+  app.appendChild(b2);
+
+  app.appendChild(el("div","note","Practice content is original and aligned to Florida B.E.S.T. ELA.10 benchmarks. Projected scores are a study estimate to guide preparation — not an official FAST result."));
+  window.scrollTo(0,0);
+}
+
+var FOCUS_TIPS={
+  "ELA.10.R.1.1":"Tie each character's action to a motive stated or implied in the text; don't pick 'true but irrelevant' details.",
+  "ELA.10.R.1.2":"Theme = the idea developed across the whole passage. Ask 'what is this really about?' before scanning options.",
+  "ELA.10.R.1.3":"For figurative-language items, name the device AND its effect; the answer usually captures both.",
+  "ELA.10.R.2.1":"Central idea summarizes the whole text; supporting details are the specific facts underneath it.",
+  "ELA.10.R.2.2":"Track WHY the author wrote it and HOW (rhetorical moves), not just what is said.",
+  "ELA.10.R.2.3":"Separate the claim from the evidence; identify concessions and rebuttals.",
+  "ELA.10.R.2.4":"Judge whether evidence actually supports the claim; watch for missing data and overstated distractors.",
+  "ELA.10.R.3.1":"Pin down the exact axis on which paired authors differ before comparing.",
+  "ELA.10.R.3.3":"Synthesis = real common ground; your evidence must come from BOTH texts.",
+  "ELA.10.V.1.3":"Plug each choice back into the sentence; the dictionary meaning is often the trap."
+};
+
+function resetAll(toBriefing){
+  state.targetLevel=3; state.usedPassages={}; state.setsDone=0; state.queue=[]; state.qIndex=0;
+  state.passage=null; state.setResults=[]; state.responses=[]; state.perStd={};
+  document.getElementById("mFill").style.width="0%";
+  document.getElementById("mCursor").style.left="0%";
+  document.getElementById("mScore").textContent="—";
+  document.getElementById("mBand").textContent="";
+  if(toBriefing){ document.getElementById("meterWrap").style.display="none"; renderBriefing(); }
+  else { startExam(); }
+}
+
+/* ---------------- BRIEFING ---------------- */
+function renderBriefing(){
+  state.screen="briefing"; setChip("Briefing");
+  app.innerHTML="";
+  app.appendChild(el("h1",null,"FAST Grade 10 ELA<br>Retake — Cram &amp; Mastery"));
+  app.appendChild(el("div","lead","Adaptive practice built to get you across the <b>246</b> line (Level 3) for graduation. Feedback is instant after every question, and the difficulty adapts to you in real time."));
+
+  var s=el("div","card");
+  s.appendChild(el("h2",null,"⚡ 5 tactics that win the retake"));
+  var tips=[
+    ["Protect easy points first.","You don't need perfection for 246 — you need to stop losing points to careless reading and steal a few hard ones."],
+    ["EBSR: check Part B first.","Your evidence (B) must match your analysis (A). Skim the evidence options; if only one A-answer has matching proof, that's it."],
+    ["Hot-Text: most direct line wins.","Pick the line that explicitly states the answer — not the one that merely feels related."],
+    ["Multi-Select: count & isolate.","'Select TWO' means exactly two, each correct on its own. Distractors are usually true-but-off-topic."],
+    ["Pace ~10–12 min per set.","Read once, actively. Let questions send you back for evidence. Never re-read the whole passage per question."]
+  ];
+  tips.forEach(function(t,i){
+    var d=el("div"); d.style.margin="10px 0"; d.style.paddingLeft="26px"; d.style.position="relative";
+    var n=el("span",null,String(i+1)); n.style.position="absolute";n.style.left="0";n.style.top="0";n.style.width="20px";n.style.height="20px";n.style.borderRadius="50%";n.style.background="var(--purple)";n.style.color="#fff";n.style.fontSize=".7rem";n.style.fontWeight="900";n.style.display="flex";n.style.alignItems="center";n.style.justifyContent="center";
+    d.appendChild(n);
+    d.innerHTML+="<b style='font-size:.92rem'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>";
+    s.appendChild(d);
+  });
+  app.appendChild(s);
+
+  var s2=el("div","card tight");
+  s2.appendChild(el("h2",null,"How the engine adapts"));
+  s2.appendChild(el("p","lead","Start at <b>Level 3</b> (on-grade). Score ≥70% on a passage set → escalate to Level 4–5 (denser texts, dual-text synthesis, subtle intent). Slip below 50% → the engine drops to Level 2–3 to rebuild the foundation. A live meter tracks your projected scale score against 246 the whole way."));
+  app.appendChild(s2);
+
+  var go=el("button","btn","Start Adaptive Simulation →");
+  go.onclick=startExam;
+  app.appendChild(go);
+  app.appendChild(el("div","note","Original B.E.S.T.-aligned practice. Not affiliated with FDOE; projected scores are a study estimate."));
+  window.scrollTo(0,0);
+}
+
+renderBriefing();
+</script>
+</body>
+</html>
