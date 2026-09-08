@@ -57,6 +57,7 @@
   .passage{background:linear-gradient(135deg,#160e2e,#12132e);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
   .passage h3{font-size:1.15rem;font-weight:900;margin-bottom:4px}
   .passage .by{font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .passage .pfccue{font-size:.72rem;color:#c9b8ef;font-weight:600;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:.5rem .7rem;margin-bottom:12px;line-height:1.5}
   .passage p{font-size:.95rem;margin-bottom:12px}
   .passage .pnum{color:var(--purple);font-weight:900;font-size:.8rem;margin-right:4px}
   .ptoggle{font-size:.75rem;color:var(--purple);font-weight:800;background:none;border:none;cursor:pointer;padding:4px 0;font-family:inherit}
@@ -606,6 +607,7 @@ function render(){
   var head=el("div");
   head.appendChild(el("h3",null,p.title));
   head.appendChild(el("div","by",p.genre+" · "+p.by));
+  head.appendChild(el("div","pfccue","🧭 <b>PFC</b> — read the whole passage once, actively: mark the <b>main idea</b> · <b>tone</b> · any <b>shift</b> · <b>figurative language</b>. Then let the questions send you back for evidence."));
   pc.appendChild(head);
   var body=el("div");
   for(var i=0;i<p.paras.length;i++){
@@ -709,7 +711,9 @@ function renderItem(it){
       });
       recordResponse(it.standard,it.level,frac); updateMeter();
       var v=frac===1?"Correct — both right":(frac>0?"Partially correct":"Not quite");
-      card.appendChild(feedback(it,frac===1?"good":(frac>0?"part":"bad"),v,null));
+      var mnotes=[];
+      chosen.forEach(function(c){ if(correctSet.indexOf(c)<0){ var mn=it.distractors&&it.distractors[String(c)]; if(mn) mnotes.push("<b>"+String.fromCharCode(65+c)+":</b> "+mn); } });
+      card.appendChild(feedback(it,frac===1?"good":(frac>0?"part":"bad"),v,mnotes.length?mnotes.join("<br>"):null));
       card.appendChild(nextBtn());
     };
   }
@@ -747,7 +751,10 @@ function renderItem(it){
       recordResponse(it.standard,it.level,frac); updateMeter();
       var v=frac===1?"Full credit — A + B":(frac===0.5?"Half credit — only one part":"Not quite");
       var extra="<b>Scoring:</b> On FAST EBSR, your evidence (Part B) must match your analysis (Part A). Both must be right for full credit.";
-      card.appendChild(feedback(it,frac===1?"good":(frac===0.5?"part":"bad"),v,null,extra));
+      var enotes=[];
+      if(!aOK){ var la=String.fromCharCode(65+selA); var na=it.distractors&&it.distractors["A("+la+")"]; if(na) enotes.push("<b>Part A ("+la+"):</b> "+na); }
+      if(!bOK){ var lb=String.fromCharCode(65+selB); var nb=it.distractors&&it.distractors["B("+lb+")"]; if(nb) enotes.push("<b>Part B ("+lb+"):</b> "+nb); }
+      card.appendChild(feedback(it,frac===1?"good":(frac===0.5?"part":"bad"),v,enotes.length?enotes.join("<br>"):null,extra));
       card.appendChild(nextBtn());
     };
     function mark(ul,sel,cor){ [].forEach.call(ul.children,function(c,idx){ c.classList.add("disabled");c.classList.remove("sel"); if(idx===cor)c.classList.add("correct"); else if(idx===sel)c.classList.add("wrong"); }); }
@@ -801,7 +808,7 @@ function feedback(it,cls,verdict,distractNote,extraHtml){
   f.appendChild(el("div","v",icon+" "+verdict));
   f.appendChild(el("div","why","<b>Why:</b> "+it.rationale));
   if(extraHtml) f.appendChild(el("div","why",extraHtml));
-  if(distractNote){ f.appendChild(el("div","dis","<b>Your choice:</b> "+distractNote)); }
+  if(distractNote){ f.appendChild(el("div","dis","<b>🔍 Where it slipped:</b> "+distractNote)); }
   f.appendChild(el("div","std",it.standard+" · "+(STANDARD_NAMES[it.standard]||"")));
   return f;
 }
@@ -965,6 +972,21 @@ function renderBriefing(){
     s.appendChild(d);
   });
   app.appendChild(s);
+
+  var pfc=el("div","card");
+  pfc.appendChild(el("h2",null,"🧭 The PFC Method — Passage First, Focused"));
+  pfc.appendChild(el("p","lead","Your core mechanical routine for every passage set. It costs ~2 minutes up front and pays it back by turning each question into a fast, targeted lookup instead of a re-read."));
+  var pfcSteps=[
+    ["1 · Passage First","Read the entire passage before you look at a single question. Don't peek at the questions first — it tricks you into keyword-skimming and missing the meaning."],
+    ["2 · Focused (one active pass)","Read once, pen-in-hand mindset. As you go, mark four things: the main idea / theme, the author's tone, any shift or turning point, and standout figurative language."],
+    ["3 · Then attack","Now hit the questions. Let each one send you back to a specific line for evidence. Never re-read the whole passage per question."]
+  ];
+  pfcSteps.forEach(function(t){
+    var d=el("div"); d.style.margin="9px 0";
+    d.innerHTML="<b style='font-size:.9rem;color:#c9b8ef'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>";
+    pfc.appendChild(d);
+  });
+  app.appendChild(pfc);
 
   var s2=el("div","card tight");
   s2.appendChild(el("h2",null,"How the engine adapts"));
