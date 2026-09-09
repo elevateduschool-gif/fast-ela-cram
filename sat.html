@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f0a1e" />
+<title>SAT AI-Tutor — Adaptive Prep</title>
+<style>
+  :root{
+    --bg:#0f0a1e; --card:#1a1030; --card2:#231640; --border:#2d1f4e;
+    --text:#f0e6ff; --muted:#9b87c4; --purple:#8b5cf6; --blue:#3b82f6;
+    --green:#22c55e; --orange:#f97316; --red:#ef4444; --gold:#fbbf24; --cyan:#06b6d4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px 40px}
+  .top{position:sticky;top:0;z-index:50;background:rgba(15,10,30,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px}
+  .top .row{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px}
+  .brand{font-weight:900;font-size:.95rem;background:linear-gradient(135deg,var(--cyan),var(--blue));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+  .spacer{flex:1}
+  .chip{font-size:.7rem;font-weight:800;padding:.25rem .55rem;border-radius:999px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+  a.chip{text-decoration:none}
+  .meter-wrap{max-width:560px;margin:8px auto 0}
+  .meter-labels{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .meter{position:relative;height:12px;background:#0d0820;border:1px solid var(--border);border-radius:999px;overflow:visible}
+  .meter .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--orange),var(--gold),var(--green));width:0%;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+  .meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;left:50%}
+  .meter .mark:after{content:"1200";position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:900;color:#fff;white-space:nowrap}
+  .meter .cursor{position:absolute;top:-5px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--cyan);transform:translateX(-50%);transition:left .6s cubic-bezier(.34,1.56,.64,1)}
+  .score-line{max-width:560px;margin:6px auto 0;display:flex;align-items:baseline;gap:8px;font-size:.72rem;color:var(--muted);font-weight:700}
+  .score-line b{color:var(--text);font-size:1.05rem}
+  h1{font-size:1.5rem;font-weight:900;margin:18px 0 6px;letter-spacing:-.5px}
+  h2{font-size:1.05rem;font-weight:900;margin:16px 0 8px}
+  p{margin:0 0 10px}
+  .lead{color:var(--muted);font-weight:600;font-size:.9rem;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+  .card.tight{padding:13px}
+  .btn{display:block;width:100%;text-align:center;border:none;border-radius:12px;padding:.85rem 1rem;font-size:1rem;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--cyan),var(--blue));transition:opacity .2s,transform .05s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:#1a1030;border:1px solid var(--border);color:var(--muted)}
+  .btn.gold{background:linear-gradient(135deg,var(--orange),var(--gold));color:#231}
+  .spkrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+  .spk{display:inline-flex;align-items:center;gap:5px;background:#152a30;border:1px solid var(--cyan);color:#bfeef7;border-radius:999px;padding:.32rem .7rem;font-size:.72rem;font-weight:800;font-family:inherit;cursor:pointer}
+  .spk:active{transform:translateY(1px)}
+  .spk.on{background:var(--cyan);color:#04222a}
+  .passage{background:linear-gradient(135deg,#101f2e,#12132e);border:1px solid var(--border);border-radius:14px;padding:14px;margin:10px 0;font-size:.95rem}
+  .qhead{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+  .qn{font-size:.75rem;font-weight:900;color:var(--muted)}
+  .fmt{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--cyan);border:1px solid rgba(6,182,212,.4);padding:.12rem .4rem;border-radius:5px}
+  .sect{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);border:1px solid rgba(139,92,246,.4);padding:.12rem .4rem;border-radius:5px}
+  .prompt{font-size:1.02rem;font-weight:800;margin:8px 0 4px;line-height:1.45}
+  .sub{font-size:.78rem;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .opt{display:flex;gap:10px;align-items:flex-start;background:#0d0820;border:1.5px solid var(--border);border-radius:12px;padding:.7rem .8rem;cursor:pointer;font-size:.95rem;font-weight:600;text-align:left;transition:border-color .15s,background .15s}
+  .opt .k{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;color:var(--muted);margin-top:1px}
+  .opt.sel{border-color:var(--cyan);background:rgba(6,182,212,.12)}
+  .opt.sel .k{border-color:var(--cyan);color:#bfeef7}
+  .opt.correct{border-color:var(--green);background:rgba(34,197,94,.12)}
+  .opt.correct .k{border-color:var(--green);color:var(--green)}
+  .opt.wrong{border-color:var(--red);background:rgba(239,68,68,.1)}
+  .opt.wrong .k{border-color:var(--red);color:var(--red)}
+  .opt.disabled{cursor:default}
+  .grid{display:flex;gap:8px;align-items:center;margin:10px 0}
+  .grid input{flex:1;background:#0d0820;border:1.5px solid var(--border);color:var(--text);border-radius:12px;padding:.75rem 1rem;font-size:1.05rem;font-family:inherit;font-weight:800;outline:none}
+  .grid input.correct{border-color:var(--green)}
+  .grid input.wrong{border-color:var(--red)}
+  .fb{border-radius:12px;padding:12px;margin-top:12px;font-size:.86rem;font-weight:600;line-height:1.55;border:1px solid}
+  .fb.good{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35)}
+  .fb.bad{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3)}
+  .fb .v{font-weight:900;font-size:.95rem;margin-bottom:6px}
+  .fb .why{color:#e7dcff}
+  .fb .dis{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);color:var(--muted)}
+  .fb .dis b{color:#e7dcff}
+  .fb .std{margin-top:8px;font-size:.68rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+  .prog{display:flex;gap:4px;margin:10px 0 4px;flex-wrap:wrap}
+  .prog i{flex:1;min-width:8px;height:6px;border-radius:4px;background:var(--border)}
+  .prog i.done{background:var(--green)}
+  .prog i.cur{background:var(--cyan)}
+  .bar{height:9px;background:#0d0820;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:5px}
+  .bar>i{display:block;height:100%}
+  .note{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center;margin:18px 0 0;line-height:1.5}
+  .big{font-size:3rem;font-weight:900;line-height:1;letter-spacing:-1px}
+  .center{text-align:center}
+  .pill{display:inline-block;padding:.3rem .8rem;border-radius:999px;font-weight:900;font-size:.85rem}
+  .soonbox{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35);border-radius:12px;padding:12px;margin:12px 0;font-size:.82rem;color:#f4e2a8;font-weight:600}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="row">
+    <a href="./" class="chip">← Engines</a>
+    <span class="brand">SAT AI-Tutor</span>
+    <span class="spacer"></span>
+    <span id="statusChip" class="chip">Briefing</span>
+  </div>
+  <div class="meter-wrap" id="meterWrap" style="display:none">
+    <div class="meter-labels"><span>800</span><span>TARGET 1200</span><span>1600</span></div>
+    <div class="meter"><div class="fill" id="mFill"></div><div class="mark"></div><div class="cursor" id="mCursor"></div></div>
+    <div class="score-line">Projected SAT (estimate): <b id="mScore">—</b> <span id="mBand"></span></div>
+  </div>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =========================================================================
+   SAT AI-Tutor — Adaptive practice (Reading & Writing + Math)
+   Original, digital-SAT-styled practice content. Not official College Board items.
+   ========================================================================= */
+
+/* ---------------- VOICE-OVER (Web Speech API) ---------------- */
+var TTS = {
+  supported: (typeof window!=="undefined") && ("speechSynthesis" in window),
+  voice:null, rate:0.95,
+  pickVoice:function(){ if(!this.supported)return; var vs=window.speechSynthesis.getVoices()||[];
+    this.voice = vs.find(function(v){return /en[-_]US/i.test(v.lang)&&/(Samantha|Natural|Google US English|Ava|Allison|Aaron)/i.test(v.name);})
+      || vs.find(function(v){return /^en/i.test(v.lang)&&/Google/i.test(v.name);})
+      || vs.find(function(v){return /^en/i.test(v.lang);}) || vs[0] || null; },
+  stop:function(){ if(this.supported){try{window.speechSynthesis.cancel();}catch(e){}} },
+  speaking:function(){ return this.supported && window.speechSynthesis.speaking; },
+  speakQueue:function(parts,onDone){ if(!this.supported||!parts||!parts.length){if(onDone)onDone();return;}
+    try{window.speechSynthesis.cancel();}catch(e){} var self=this;
+    parts.forEach(function(p,idx){ if(!p)return; var u=new SpeechSynthesisUtterance(String(p));
+      if(self.voice)u.voice=self.voice; u.rate=self.rate; u.pitch=1; u.lang="en-US";
+      if(idx===parts.length-1&&onDone)u.onend=onDone; window.speechSynthesis.speak(u); }); }
+};
+if(TTS.supported){ TTS.pickVoice(); try{window.speechSynthesis.onvoiceschanged=function(){TTS.pickVoice();};}catch(e){} }
+function LTR(i){ return String.fromCharCode(65+i); }
+function stripToSpeech(s){ return String(s==null?"":s).replace(/<[^>]+>/g," ")
+  .replace(/&amp;/g,"and").replace(/&lt;/g,"less than").replace(/&gt;/g,"greater than")
+  .replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[—–]/g,", ").replace(/\s+/g," ").trim(); }
+
+var SKILLS = {
+  wic:"Words in Context", tsp:"Text Structure & Purpose", cte:"Command of Evidence: Textual",
+  cqe:"Command of Evidence: Quantitative", cid:"Central Ideas & Details", inf:"Inferences",
+  bnd:"Boundaries (Punctuation)", fss:"Form, Structure & Sense", trn:"Transitions", syn:"Rhetorical Synthesis",
+  alg:"Algebra (linear)", adv:"Advanced Math (nonlinear)", psd:"Problem-Solving & Data", geo:"Geometry & Trig"
+};
+
+/* ---------------- ITEM BANK ---------------- */
+var BANK = [
+  /* ===== READING & WRITING ===== */
+  { id:"rw1", section:"R&W", skill:"wic", level:1, format:"mc",
+    passage:"Marie Curie's discoveries were so ______ that they reshaped entire fields; more than a century later, physicists and chemists still build directly on her work.",
+    prompt:"Which choice completes the text with the most logical and precise word?",
+    options:["tentative","transformative","conventional","fleeting"], correct:1,
+    rationale:"The clue \"reshaped entire fields\" and \"still build on her work\" signals huge, lasting impact — \"transformative\" fits precisely.",
+    distractors:{0:"\"Tentative\" (hesitant) contradicts discoveries that reshaped fields.",2:"\"Conventional\" (ordinary) is the opposite of reshaping a field.",3:"\"Fleeting\" (brief) clashes with impact lasting over a century."} },
+  { id:"rw2", section:"R&W", skill:"wic", level:2, format:"mc",
+    passage:"The novelist's late style grew increasingly ______: where her early sentences sprawled across half a page, her final works delivered the same ideas in a handful of spare, clipped lines.",
+    prompt:"Which choice completes the text with the most logical and precise word?",
+    options:["ornate","economical","ambiguous","sentimental"], correct:1,
+    rationale:"The contrast with \"sprawled\" and the phrase \"spare, clipped lines\" points to concise, stripped-down prose — \"economical.\"",
+    distractors:{0:"\"Ornate\" (elaborate) is the opposite of \"spare, clipped.\"",2:"\"Ambiguous\" (unclear) isn't supported; the text describes length, not clarity.",3:"\"Sentimental\" (emotional) is unrelated to sentence length."} },
+  { id:"rw3", section:"R&W", skill:"tsp", level:2, format:"mc",
+    passage:"Most people assume octopuses are loners. Recent underwater recordings, however, show that at certain sites dozens gather, signaling to one another with color changes and posture. The findings suggest octopus behavior is far more social than long believed.",
+    prompt:"Which choice best states the main purpose of the text?",
+    options:["To describe how octopuses change color.","To present evidence that challenges a common assumption about octopuses.","To argue octopuses are the most intelligent invertebrates.","To explain how scientists capture underwater video."], correct:1,
+    rationale:"The text sets up an assumption (\"loners\"), then uses evidence (\"however… dozens gather\") to overturn it. Its purpose is to challenge that assumption.",
+    distractors:{0:"Color change is a supporting detail, not the purpose.",2:"No claim about being \"most intelligent\" is made — too broad.",3:"The recordings are mentioned as evidence, not as the topic."} },
+  { id:"rw4", section:"R&W", skill:"cte", level:3, format:"mc",
+    passage:"A student argues that the poem's imagery emphasizes renewal and rebirth.",
+    prompt:"Which quotation from the poem, if genuine, would most directly support the student's claim?",
+    options:["\"the gray of an endless, unmoving winter\"","\"buds splitting open toward the widening light\"","\"a clock that never once forgets to tick\"","\"a silence as heavy and final as stone\""], correct:1,
+    rationale:"\"Renewal/rebirth\" needs imagery of new life. \"Buds splitting open toward the widening light\" is classic spring/rebirth imagery — a direct match.",
+    distractors:{0:"\"Endless winter\" evokes stagnation, the opposite of renewal.",2:"A ticking clock suggests time/routine, not rebirth.",3:"\"Heavy… as stone\" suggests finality or death, not renewal."} },
+  { id:"rw5", section:"R&W", skill:"cqe", level:2, format:"mc",
+    passage:"In a study, researchers grew identical seedlings under three light colors and recorded mean height after 30 days: blue light, 24 cm; red light, 18 cm; green light, 9 cm.",
+    prompt:"Which choice most accurately uses the data to complete the statement: \"Of the three colors tested, ______\"?",
+    options:["green light produced the tallest seedlings.","red light produced taller seedlings than blue light.","blue light produced the tallest seedlings.","all three colors produced roughly equal growth."], correct:2,
+    rationale:"Blue = 24 cm is the greatest of the three means, so blue produced the tallest seedlings. Always match the claim to the actual numbers.",
+    distractors:{0:"Green (9 cm) was shortest, not tallest.",1:"Red (18) < blue (24), so this reverses the data.",3:"24, 18, and 9 are clearly not equal."} },
+  { id:"rw6", section:"R&W", skill:"inf", level:2, format:"mc",
+    passage:"The museum's new wing relies entirely on natural sunlight for illumination. Its most valuable medieval manuscripts, however, fade rapidly whenever they are exposed to direct sunlight. Therefore, those manuscripts ______",
+    prompt:"Which choice most logically completes the text?",
+    options:["are displayed in the new wing throughout the year.","cannot be safely exhibited in the new wing.","attract the largest crowds in the museum.","were donated by private collectors."], correct:1,
+    rationale:"Sunlight harms the manuscripts and the new wing is all sunlight, so logically they can't be shown there safely. The inference follows directly from the two facts.",
+    distractors:{0:"Displaying light-sensitive items in an all-sunlight room contradicts the danger described.",2:"Crowd size is never discussed.",3:"Their origin is never discussed."} },
+  { id:"rw7", section:"R&W", skill:"bnd", level:1, format:"mc",
+    passage:"Complete the sentence: \"The robotics team practiced for months ______ they were determined to win the state championship.\"",
+    prompt:"Which choice conforms to the conventions of Standard English?",
+    options:["months, they","months; they","months they","months: they"], correct:1,
+    rationale:"Two independent clauses (\"…practiced for months\" and \"they were determined…\") need a semicolon (or a period). The semicolon in B is correct.",
+    distractors:{0:"A comma between two independent clauses is a comma splice.",2:"No punctuation creates a run-on (fused sentence).",3:"A colon should introduce an explanation or list, which doesn't fit here."} },
+  { id:"rw8", section:"R&W", skill:"trn", level:2, format:"mc",
+    passage:"Solar panels have become dramatically cheaper over the past decade. ______, many households still hesitate to install them, pointing to the upfront installation cost.",
+    prompt:"Which choice completes the text with the most logical transition?",
+    options:["Therefore,","For example,","Nevertheless,","Similarly,"], correct:2,
+    rationale:"Cheaper panels would predict more adoption, but households still hesitate — that's a contrast, so \"Nevertheless\" is logical.",
+    distractors:{0:"\"Therefore\" signals a result that agrees; here the second idea opposes the first.",1:"\"For example\" would introduce an illustration, not a contrast.",3:"\"Similarly\" signals likeness, but the ideas conflict."} },
+  { id:"rw9", section:"R&W", skill:"syn", level:2, format:"mc",
+    passage:"While researching, a student took these notes: • Bees pollinate roughly 75% of the world's leading food crops. • Wild bee populations have declined in many regions. • Some farms now rent commercial hives. The student wants to emphasize the economic importance of bees to agriculture.",
+    prompt:"Which choice most effectively uses the notes to accomplish the student's goal?",
+    options:["Some farms rent commercial hives when wild bees are scarce.","Wild bee populations have declined in many regions.","Because bees pollinate about 75% of leading food crops, their decline threatens a large share of the world's food supply.","Bees are insects that help pollinate a variety of crops."], correct:2,
+    rationale:"The goal is economic importance. Choice C links the 75% figure to a threat to the food supply — directly conveying stakes and importance.",
+    distractors:{0:"Focuses on a farm practice, not the broad economic importance.",1:"States a decline but not why it matters economically.",3:"A vague definition; no emphasis on importance."} },
+
+  /* ===== MATH ===== */
+  { id:"m1", section:"Math", skill:"alg", level:1, format:"mc",
+    prompt:"If 3x + 5 = 20, what is the value of x?",
+    options:["3","5","15","45"], correct:1,
+    rationale:"Subtract 5: 3x = 15. Divide by 3: x = 5.",
+    distractors:{0:"3 comes from dividing 15 by 5 by mistake.",2:"15 is 3x, not x — you forgot to divide by 3.",3:"45 multiplies instead of dividing."} },
+  { id:"m2", section:"Math", skill:"alg", level:2, format:"mc",
+    prompt:"A gym charges a one-time $25 sign-up fee plus $15 per month. Which equation gives the total cost C, in dollars, for m months?",
+    options:["C = 25m + 15","C = 15m + 25","C = 40m","C = 15(m + 25)"], correct:1,
+    rationale:"The monthly $15 is multiplied by m; the $25 fee is a one-time constant: C = 15m + 25.",
+    distractors:{0:"Swaps the rate and the fee — multiplies the one-time fee by months.",2:"Adds the two numbers into one rate, losing the fixed fee.",3:"Distributes incorrectly; would charge $15 on the fee too."} },
+  { id:"m3", section:"Math", skill:"alg", level:2, format:"mc",
+    prompt:"If 2x + y = 10 and y = x + 1, what is the value of x?",
+    options:["2","3","4","9"], correct:1,
+    rationale:"Substitute y = x + 1: 2x + (x + 1) = 10 → 3x + 1 = 10 → 3x = 9 → x = 3.",
+    distractors:{0:"2 skips the +1 when substituting.",2:"4 comes from 3x = 12 (added instead of subtracting the 1).",3:"9 is 3x, not x."} },
+  { id:"m4", section:"Math", skill:"adv", level:3, format:"mc",
+    prompt:"For the function f(x) = x² − 6x + 8, which values of x give f(x) = 0?",
+    options:["x = 2 and x = 4","x = −2 and x = −4","x = 1 and x = 8","x = 3 only"], correct:0,
+    rationale:"Factor: x² − 6x + 8 = (x − 2)(x − 4). Set each factor to 0 → x = 2 or x = 4.",
+    distractors:{1:"Sign error: the factors are (x−2)(x−4), giving positive roots.",2:"1 and 8 multiply to 8 but sum to 9, not 6.",3:"A quadratic like this has two distinct roots, not one."} },
+  { id:"m5", section:"Math", skill:"adv", level:2, format:"grid",
+    prompt:"If 2^x = 32, what is the value of x?",
+    answers:["5"],
+    rationale:"32 = 2⁵, so 2^x = 2⁵ means x = 5." },
+  { id:"m6", section:"Math", skill:"psd", level:1, format:"mc",
+    prompt:"A jacket originally priced at $80 is discounted 25%. What is the sale price?",
+    options:["$20","$55","$60","$100"], correct:2,
+    rationale:"25% of 80 = 20. Sale price = 80 − 20 = $60.",
+    distractors:{0:"$20 is the discount amount, not the price you pay.",1:"$55 subtracts 25 dollars, not 25 percent.",3:"$100 adds the discount instead of subtracting."} },
+  { id:"m7", section:"Math", skill:"psd", level:2, format:"mc",
+    prompt:"A recipe uses 3 cups of flour to make 12 cookies. At the same rate, how many cups are needed for 20 cookies?",
+    options:["4","5","6","8"], correct:1,
+    rationale:"Rate = 3 cups / 12 cookies = 0.25 cup per cookie. 0.25 × 20 = 5 cups.",
+    distractors:{0:"4 uses the wrong ratio (e.g., 20/5).",2:"6 doubles the 3 cups without matching the count.",3:"8 scales as if for 32 cookies."} },
+  { id:"m8", section:"Math", skill:"psd", level:2, format:"mc",
+    prompt:"A data set has the values 4, 8, 8, 10, 20. Which statement is true?",
+    options:["The mean equals the median.","The mean is greater than the median.","The mean is less than the median.","The mean equals the mode."], correct:1,
+    rationale:"Mean = (4+8+8+10+20)/5 = 50/5 = 10. Median (middle value) = 8. So mean (10) > median (8), because the large value 20 pulls the mean up.",
+    distractors:{0:"Mean 10 ≠ median 8.",2:"Reverses it; the outlier 20 raises the mean above the median.",3:"Mode = 8, but mean = 10."} },
+  { id:"m9", section:"Math", skill:"geo", level:2, format:"grid",
+    prompt:"A right triangle has legs of length 6 and 8. What is the length of the hypotenuse?",
+    answers:["10"],
+    rationale:"By the Pythagorean theorem: 6² + 8² = 36 + 64 = 100, and √100 = 10." },
+  { id:"m10", section:"Math", skill:"geo", level:2, format:"mc",
+    prompt:"Two interior angles of a triangle measure 50° and 60°. What is the measure of the third angle?",
+    options:["70°","80°","110°","130°"], correct:0,
+    rationale:"Angles of a triangle sum to 180°. 180 − (50 + 60) = 180 − 110 = 70°.",
+    distractors:{1:"80° would require the first two to sum to 100.",2:"110° is the sum of the two given angles, not the third.",3:"130° subtracts only one of the given angles."} }
+];
+
+/* ---------------- ENGINE (item-adaptive) ---------------- */
+var SESSION_LEN = 12;
+var state = { screen:"briefing", target:2, used:{}, answered:0, item:null, responses:[], perSkill:{} };
+
+function pickNext(){
+  var sec = (state.answered % 2 === 0) ? "R&W" : "Math";
+  var cands = BANK.filter(function(x){ return !state.used[x.id] && x.section===sec; });
+  if(!cands.length) cands = BANK.filter(function(x){ return !state.used[x.id]; });
+  if(!cands.length) return null;
+  cands.sort(function(a,b){ return Math.abs(a.level-state.target)-Math.abs(b.level-state.target); });
+  return cands[0];
+}
+function recordResponse(it,frac){
+  state.responses.push({skill:it.skill,section:it.section,level:it.level,frac:frac});
+  if(!state.perSkill[it.skill]) state.perSkill[it.skill]={sum:0,n:0};
+  state.perSkill[it.skill].sum+=frac; state.perSkill[it.skill].n++;
+}
+function projectedScore(){
+  if(!state.responses.length) return null;
+  var earned=0,possible=0,lvlSum=0;
+  state.responses.forEach(function(r){ earned+=r.frac*r.level; possible+=r.level; lvlSum+=r.level; });
+  var wAcc=possible>0?earned/possible:0, avgLevel=lvlSum/state.responses.length;
+  var s=Math.round(800 + wAcc*700 + (avgLevel-2)*50);
+  s=Math.round(s/10)*10; if(s<800)s=800; if(s>1600)s=1600; return s;
+}
+function bandFor(s){
+  if(s>=1350) return {t:"Highly competitive",c:"var(--green)"};
+  if(s>=1200) return {t:"On target",c:"var(--green)"};
+  if(s>=1050) return {t:"Approaching target",c:"var(--orange)"};
+  return {t:"Building foundations",c:"var(--red)"};
+}
+function updateMeter(){
+  var s=projectedScore(), fill=document.getElementById("mFill"), cur=document.getElementById("mCursor");
+  var sc=document.getElementById("mScore"), bd=document.getElementById("mBand");
+  if(s===null){ sc.textContent="—"; return; }
+  var pct=((s-800)/800)*100; if(pct<0)pct=0; if(pct>100)pct=100;
+  fill.style.width=pct+"%"; cur.style.left=pct+"%"; sc.textContent=s;
+  var b=bandFor(s); bd.textContent="· "+b.t; bd.style.color=b.c;
+}
+
+var app=document.getElementById("app");
+function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+function setChip(t){document.getElementById("statusChip").textContent=t;}
+
+function speakQuestion(it,onDone){
+  var parts=[];
+  if(it.passage) parts.push(stripToSpeech(it.passage));
+  parts.push(stripToSpeech(it.prompt));
+  if(it.format==="mc") (it.options||[]).forEach(function(o,i){ parts.push("Option "+LTR(i)+". "+stripToSpeech(o)); });
+  TTS.speakQueue(parts,onDone);
+}
+function speakElimination(it,onDone){
+  var parts=["Let's work through this."];
+  if(it.format==="mc"){
+    parts.push("By process of elimination:");
+    it.options.forEach(function(o,i){
+      var lead="Option "+LTR(i)+". "+stripToSpeech(o)+". ";
+      if(i===it.correct) parts.push(lead+"This one is correct. "+stripToSpeech(it.rationale));
+      else { var n=it.distractors&&it.distractors[String(i)]; parts.push(lead+"Cross it out. "+(n?stripToSpeech(n):"It doesn't fit.")); }
+    });
+    parts.push("The answer is "+LTR(it.correct)+".");
+  } else {
+    parts.push(stripToSpeech(it.prompt));
+    parts.push("Solution: "+stripToSpeech(it.rationale));
+    parts.push("The answer is "+it.answers[0]+".");
+  }
+  TTS.speakQueue(parts,onDone);
+}
+function speakBtn(label,run){
+  var b=el("button","spk",label);
+  b.onclick=function(){ if(TTS.speaking()){TTS.stop();b.textContent=label;b.classList.remove("on");return;}
+    b.textContent="⏹ Stop"; b.classList.add("on"); run(function(){b.textContent=label;b.classList.remove("on");}); };
+  return b;
+}
+
+function startExam(){ state.screen="exam"; document.getElementById("meterWrap").style.display="block"; nextItem(); }
+function nextItem(){
+  if(state.answered>=SESSION_LEN){ showResults(); return; }
+  var it=pickNext();
+  if(!it){ showResults(); return; }
+  state.used[it.id]=true; state.item=it; render();
+}
+
+function render(){
+  TTS.stop(); app.innerHTML="";
+  var it=state.item;
+  setChip("Q"+(state.answered+1)+"/"+SESSION_LEN+" · "+it.section+" · L"+it.level);
+  updateMeter();
+
+  // progress
+  var pr=el("div","prog");
+  for(var j=0;j<SESSION_LEN;j++){ pr.appendChild(el("i", j<state.answered?"done":(j===state.answered?"cur":""))); }
+  app.appendChild(pr);
+
+  var card=el("div","card");
+  var qh=el("div","qhead");
+  qh.appendChild(el("span","qn","Question "+(state.answered+1)));
+  qh.appendChild(el("span","sect",it.section));
+  qh.appendChild(el("span","fmt",it.format==="grid"?"Grid-in":"Multiple Choice"));
+  card.appendChild(qh);
+
+  if(TTS.supported){
+    var vrow=el("div","spkrow");
+    vrow.appendChild(speakBtn("🔊 Read question", function(done){ speakQuestion(it,done); }));
+    var rates=[0.8,0.95,1.15], rlabels=["0.8×","1×","1.2×"], ri=1; TTS.rate=rates[ri];
+    var sp=el("button","spk","⚙ Speed "+rlabels[ri]);
+    sp.onclick=function(){ ri=(ri+1)%rates.length; TTS.rate=rates[ri]; sp.textContent="⚙ Speed "+rlabels[ri]; };
+    vrow.appendChild(sp); card.appendChild(vrow);
+  }
+
+  if(it.passage) card.appendChild(el("div","passage",it.passage));
+  card.appendChild(el("div","prompt",it.prompt));
+  card.appendChild(el("div","sub",SKILLS[it.skill]||it.section));
+
+  var submit=el("button","btn","Submit Answer"); submit.disabled=true;
+  var answered=false;
+
+  if(it.format==="mc"){
+    var sel=-1; var ul=el("div","list");
+    it.options.forEach(function(o,idx){
+      var li=el("div","opt");
+      li.appendChild(el("span","k",LTR(idx)));
+      li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(answered)return; sel=idx; [].forEach.call(ul.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); submit.disabled=false; };
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    submit.onclick=function(){ if(sel<0||answered)return; answered=true; submit.style.display="none";
+      var correct=(sel===it.correct), frac=correct?1:0;
+      [].forEach.call(ul.children,function(c,idx){ c.classList.add("disabled"); c.classList.remove("sel");
+        if(idx===it.correct)c.classList.add("correct"); else if(idx===sel)c.classList.add("wrong"); });
+      recordResponse(it,frac); updateMeter();
+      var note=(!correct && it.distractors)?it.distractors[String(sel)]:null;
+      card.appendChild(feedback(it,correct,note));
+      card.appendChild(nextBtn());
+    };
+  } else { // grid
+    var wrap=el("div","grid");
+    var inp=document.createElement("input"); inp.type="text"; inp.inputMode="decimal"; inp.placeholder="Type your answer";
+    inp.oninput=function(){ submit.disabled = inp.value.trim()===""; };
+    wrap.appendChild(inp); card.appendChild(wrap);
+    submit.onclick=function(){ if(answered)return; var val=inp.value.trim(); if(val==="")return; answered=true; submit.style.display="none";
+      var correct=gridCorrect(val,it.answers), frac=correct?1:0;
+      inp.disabled=true; inp.classList.add(correct?"correct":"wrong");
+      recordResponse(it,frac); updateMeter();
+      var note=correct?null:("You entered "+val+". The correct answer is "+it.answers[0]+".");
+      card.appendChild(feedback(it,correct,note));
+      card.appendChild(nextBtn());
+    };
+  }
+  card.appendChild(submit);
+  app.appendChild(card);
+  window.scrollTo(0,0);
+}
+function gridCorrect(val,answers){
+  var v=val.replace(/\s/g,"");
+  for(var i=0;i<answers.length;i++){ if(v===answers[i]) return true; var a=parseFloat(answers[i]), b=parseFloat(v);
+    if(!isNaN(a)&&!isNaN(b)&&Math.abs(a-b)<1e-6) return true; }
+  return false;
+}
+
+function feedback(it,correct,note){
+  var f=el("div","fb "+(correct?"good":"bad"));
+  f.appendChild(el("div","v",(correct?"✅ Correct":"❌ Not quite")));
+  f.appendChild(el("div","why","<b>Why:</b> "+it.rationale));
+  if(note) f.appendChild(el("div","dis","<b>🔍 Where it slipped:</b> "+note));
+  f.appendChild(el("div","std",(it.section==="Math"?"SAT Math · ":"SAT R&W · ")+(SKILLS[it.skill]||"")));
+  if(TTS.supported){
+    var wrow=el("div","spkrow"); wrow.style.margin="10px 0 0";
+    wrow.appendChild(speakBtn("🔊 Walk me through it", function(done){ speakElimination(it,done); }));
+    f.appendChild(wrow);
+  }
+  return f;
+}
+function nextBtn(){
+  var last=(state.answered>=SESSION_LEN-1);
+  var b=el("button","btn gold",last?"See my results →":"Next question →");
+  b.style.marginTop="10px";
+  b.onclick=function(){
+    TTS.stop();
+    // adapt difficulty from the last response
+    var lastFrac=state.responses[state.responses.length-1].frac;
+    if(lastFrac>=1) state.target=Math.min(3,state.target+1);
+    else if(lastFrac<=0) state.target=Math.max(1,state.target-1);
+    state.answered++;
+    if(state.answered>=SESSION_LEN) showResults(); else nextItem();
+  };
+  return b;
+}
+
+function showResults(){
+  TTS.stop(); state.screen="results"; app.innerHTML=""; setChip("Results");
+  var s=projectedScore(), band=bandFor(s); updateMeter();
+  var head=el("div","card center");
+  head.appendChild(el("div","lead","Projected SAT Score (estimate)"));
+  var big=el("div","big",String(s)); big.style.color=band.c; head.appendChild(big);
+  var pill=el("div","pill",band.t); pill.style.background="rgba(6,182,212,.14)"; pill.style.color=band.c; pill.style.border="1px solid "+band.c; pill.style.marginTop="8px";
+  head.appendChild(pill);
+  head.appendChild(el("p","lead","<br>Based on "+state.responses.length+" adaptive items across Reading &amp; Writing and Math. Target line shown on the meter is 1200 — adjust your goal as needed."));
+  app.appendChild(head);
+
+  // section split
+  var secAgg={};
+  state.responses.forEach(function(r){ if(!secAgg[r.section])secAgg[r.section]={sum:0,n:0}; secAgg[r.section].sum+=r.frac; secAgg[r.section].n++; });
+  var sc=el("div","card");
+  sc.appendChild(el("h2",null,"By section"));
+  ["R&W","Math"].forEach(function(k){ if(!secAgg[k])return; var pct=Math.round(secAgg[k].sum/secAgg[k].n*100);
+    var col=pct<50?"var(--red)":(pct<75?"var(--orange)":"var(--green)");
+    var row=el("div"); row.style.margin="8px 0";
+    row.innerHTML="<div style='display:flex;justify-content:space-between;font-size:.85rem;font-weight:800'><span>"+(k==="R&W"?"Reading & Writing":"Math")+"</span><span style='color:"+col+"'>"+pct+"%</span></div>";
+    var bar=el("div","bar"); var fi=el("i"); fi.style.width=pct+"%"; fi.style.background=col; bar.appendChild(fi); row.appendChild(bar); sc.appendChild(row); });
+  app.appendChild(sc);
+
+  // per-skill
+  var ks=Object.keys(state.perSkill);
+  ks.sort(function(a,b){ return (state.perSkill[a].sum/state.perSkill[a].n)-(state.perSkill[b].sum/state.perSkill[b].n); });
+  var sk=el("div","card"); sk.appendChild(el("h2",null,"Skill breakdown (weakest first)"));
+  ks.forEach(function(k){ var o=state.perSkill[k], pct=Math.round(o.sum/o.n*100), col=pct<50?"var(--red)":(pct<75?"var(--orange)":"var(--green)");
+    var row=el("div"); row.style.margin="9px 0";
+    row.innerHTML="<div style='display:flex;justify-content:space-between;font-size:.8rem;font-weight:800'><span>"+(SKILLS[k]||k)+"</span><span style='color:"+col+"'>"+pct+"% ("+o.n+")</span></div>";
+    var bar=el("div","bar"); var fi=el("i"); fi.style.width=pct+"%"; fi.style.background=col; bar.appendChild(fi); row.appendChild(bar); sk.appendChild(row); });
+  app.appendChild(sk);
+
+  // phase 2 teaser
+  var soon=el("div","soonbox");
+  soon.innerHTML="🤖 <b>Coming in Phase 2:</b> a live AI chat tutor (powered by Claude) that generates unlimited fresh questions on your weak skills, answers your \"why\" follow-ups, and teaches step-by-step. It unlocks once this engine is hosted on Vercel with an API key.";
+  app.appendChild(soon);
+
+  var again=el("button","btn","Run another adaptive set →"); again.onclick=resetAll; app.appendChild(again);
+  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="8px"; home.onclick=function(){ location.href="./"; }; app.appendChild(home);
+  app.appendChild(el("div","note","Original, digital-SAT-styled practice aligned to College Board skill areas. Not affiliated with the College Board; projected scores are study estimates, not official results."));
+  window.scrollTo(0,0);
+}
+
+function resetAll(){
+  TTS.stop();
+  state.target=2; state.used={}; state.answered=0; state.item=null; state.responses=[]; state.perSkill={};
+  document.getElementById("mFill").style.width="0%"; document.getElementById("mCursor").style.left="0%";
+  document.getElementById("mScore").textContent="—"; document.getElementById("mBand").textContent="";
+  startExam();
+}
+
+/* ---------------- BRIEFING ---------------- */
+function renderBriefing(){
+  state.screen="briefing"; setChip("Briefing"); app.innerHTML="";
+  app.appendChild(el("h1",null,"SAT AI-Tutor"));
+  app.appendChild(el("div","lead","Adaptive practice across <b>Reading &amp; Writing</b> and <b>Math</b>. Every question gives instant feedback, a full answer explanation with process of elimination, and an optional read-aloud voice-over. A live meter projects your SAT score in real time."));
+
+  var s=el("div","card");
+  s.appendChild(el("h2",null,"🧠 How this engine works"));
+  var tips=[
+    ["It adapts to you.","Start at medium difficulty. Get one right → the next gets harder. Miss one → it eases off to rebuild the skill. It alternates Reading &amp; Writing and Math so you train both."],
+    ["Learn from every miss.","After each answer you get the reasoning for the correct choice and why each wrong option was a trap — tap 🔊 Walk me through it to hear it."],
+    ["Digital-SAT formats.","Short-passage Reading &amp; Writing questions, four-choice Math, plus student-produced-response grid-ins where you type the answer."],
+    ["Watch your score climb.","The meter estimates your SAT score (800–1600) and tracks it against the 1200 target line as you go."]
+  ];
+  tips.forEach(function(t,i){
+    var d=el("div"); d.style.margin="10px 0"; d.style.paddingLeft="26px"; d.style.position="relative";
+    var n=el("span",null,String(i+1)); n.style.cssText="position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--cyan);color:#04222a;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center";
+    d.appendChild(n);
+    d.innerHTML+="<b style='font-size:.92rem'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>";
+    s.appendChild(d);
+  });
+  app.appendChild(s);
+
+  var go=el("button","btn","Start Adaptive SAT Set →"); go.onclick=startExam; app.appendChild(go);
+  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="8px"; home.onclick=function(){ location.href="./"; }; app.appendChild(home);
+  app.appendChild(el("div","note","Original SAT-styled practice. Not affiliated with the College Board; projected scores are study estimates."));
+  window.scrollTo(0,0);
+}
+
+renderBriefing();
+</script>
+</body>
+</html>
