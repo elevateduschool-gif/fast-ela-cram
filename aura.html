@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0a1e" />
+<title>AURA-SAT — Predictive Cognitive Tutor</title>
+<style>
+  :root{
+    --bg:#0b0a1e; --card:#161228; --card2:#1e1838; --border:#2b2450;
+    --text:#f0ecff; --muted:#9d92c4; --purple:#8b5cf6; --blue:#3b82f6; --cyan:#22d3ee;
+    --green:#22c55e; --orange:#f97316; --red:#ef4444; --gold:#fbbf24; --pink:#ec4899;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:580px;margin:0 auto;padding:0 14px 40px}
+  .top{position:sticky;top:0;z-index:50;background:rgba(11,10,30,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px}
+  .top .row{max-width:580px;margin:0 auto;display:flex;align-items:center;gap:8px}
+  .brand{font-weight:900;font-size:.95rem;letter-spacing:.3px;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+  .spacer{flex:1}
+  .chip{font-size:.68rem;font-weight:800;padding:.25rem .5rem;border-radius:999px;border:1px solid var(--border);color:var(--muted);white-space:nowrap;background:none;font-family:inherit;cursor:default}
+  a.chip,button.chip{text-decoration:none;cursor:pointer}
+  .chip.live{border-color:var(--cyan);color:#bff4fb}
+  /* live telemetry bar */
+  .tele{max-width:580px;margin:8px auto 0;display:flex;gap:6px;flex-wrap:wrap;font-size:.62rem;font-weight:800}
+  .t{display:inline-flex;align-items:center;gap:4px;padding:.2rem .5rem;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+  .t b{color:var(--text);font-weight:900}
+  .t.warn{border-color:var(--orange);color:#f9c07a;background:rgba(249,115,22,.1)}
+  .t.sys1{border-color:var(--red);color:#f4a3a3;background:rgba(239,68,68,.1)}
+  .t.sys2{border-color:var(--green);color:#a3e6bd;background:rgba(34,197,94,.1)}
+  h1{font-size:1.5rem;font-weight:900;margin:16px 0 6px;letter-spacing:-.5px}
+  h2{font-size:1.05rem;font-weight:900;margin:14px 0 8px}
+  p{margin:0 0 10px}
+  .lead{color:var(--muted);font-weight:600;font-size:.9rem;margin-bottom:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+  .btn{display:block;width:100%;text-align:center;border:none;border-radius:12px;padding:.85rem 1rem;font-size:1rem;font-weight:800;font-family:inherit;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--cyan),var(--purple));transition:opacity .2s,transform .05s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.ghost{background:#161228;border:1px solid var(--border);color:var(--muted)}
+  .btn.gold{background:linear-gradient(135deg,var(--orange),var(--gold));color:#231}
+  .btn.pink{background:linear-gradient(135deg,var(--pink),var(--purple))}
+  .passage{background:linear-gradient(135deg,#141033,#101a33);border:1px solid var(--border);border-radius:14px;padding:14px;margin:10px 0;font-size:.97rem;line-height:1.65}
+  .prompt{font-size:1.04rem;font-weight:800;margin:10px 0 4px;line-height:1.45}
+  .sub{font-size:.76rem;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .lbl{font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin:12px 0 4px}
+  input.txt,textarea.txt{width:100%;background:#0e0b22;border:1.5px solid var(--border);color:var(--text);border-radius:12px;padding:.7rem .9rem;font-size:.95rem;font-family:inherit;font-weight:600;outline:none;resize:vertical}
+  input.txt:focus,textarea.txt:focus{border-color:var(--cyan)}
+  .list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .opt{display:flex;gap:10px;align-items:flex-start;background:#0e0b22;border:1.5px solid var(--border);border-radius:12px;padding:.7rem .8rem;cursor:pointer;font-size:.95rem;font-weight:600;text-align:left;transition:border-color .15s,background .15s}
+  .opt .k{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;color:var(--muted);margin-top:1px}
+  .opt.sel{border-color:var(--cyan);background:rgba(34,211,238,.12)}
+  .opt.sel .k{border-color:var(--cyan);color:#bff4fb}
+  .opt.correct{border-color:var(--green);background:rgba(34,197,94,.12)}
+  .opt.correct .k{border-color:var(--green);color:var(--green)}
+  .opt.wrong{border-color:var(--red);background:rgba(239,68,68,.1)}
+  .opt.wrong .k{border-color:var(--red);color:var(--red)}
+  .opt.disabled{cursor:default}
+  .dna{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0}
+  .dnaopt{display:flex;gap:10px;align-items:flex-start;background:#0e0b22;border:1.5px solid var(--border);border-radius:12px;padding:.65rem .8rem;cursor:pointer;font-size:.9rem;font-weight:700;text-align:left}
+  .dnaopt .em{font-size:1.1rem}
+  .dnaopt.sel{border-color:var(--pink);background:rgba(236,72,153,.12)}
+  .dnaopt small{display:block;color:var(--muted);font-weight:600;font-size:.72rem;margin-top:2px}
+  .fb{border-radius:12px;padding:12px;margin-top:12px;font-size:.87rem;font-weight:600;line-height:1.55;border:1px solid}
+  .fb.good{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35)}
+  .fb.bad{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3)}
+  .fb.alert{background:rgba(249,115,22,.09);border-color:rgba(249,115,22,.4)}
+  .fb .v{font-weight:900;font-size:.95rem;margin-bottom:6px}
+  .fb .why{color:#e9e2ff}
+  .fb .fix{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);color:#bff4fb}
+  .metaphor{font-style:italic;color:var(--muted);font-size:.82rem;margin-top:6px}
+  .prog{display:flex;gap:4px;margin:8px 0}
+  .prog i{flex:1;height:6px;border-radius:4px;background:var(--border)}
+  .prog i.done{background:var(--green)} .prog i.cur{background:var(--cyan)}
+  .reset{position:fixed;inset:0;z-index:100;background:rgba(8,7,20,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+  .breath{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.35),rgba(139,92,246,.12));border:2px solid var(--cyan);margin:18px 0;animation:breathe 4s ease-in-out infinite;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:#bff4fb}
+  @keyframes breathe{0%,100%{transform:scale(.8);opacity:.7}50%{transform:scale(1.15);opacity:1}}
+  .stat{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+  .stat .s{flex:1;min-width:90px;background:#0e0b22;border:1px solid var(--border);border-radius:12px;padding:.6rem;text-align:center}
+  .stat .s b{display:block;font-size:1.5rem;font-weight:900}
+  .stat .s span{font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .dnabar{margin:8px 0}
+  .dnabar .h{display:flex;justify-content:space-between;font-size:.78rem;font-weight:800}
+  .bar{height:9px;background:#0e0b22;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:4px}
+  .bar>i{display:block;height:100%;background:var(--pink)}
+  .note{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center;margin:18px 0 0;line-height:1.5}
+  .big{font-size:2.6rem;font-weight:900;line-height:1;letter-spacing:-1px}
+  .center{text-align:center}
+  .track{outline:2px solid rgba(34,211,238,.0);border-radius:6px;transition:outline-color .1s}
+  body.linetrack .passage:hover{outline:2px solid rgba(34,211,238,.25)}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="row">
+    <a href="./" class="chip">← Engines</a>
+    <span class="brand">◈ AURA-SAT</span>
+    <span class="spacer"></span>
+    <button class="chip" id="dnaBtn">🧬 Error DNA</button>
+    <span id="statusChip" class="chip live">Boot</span>
+  </div>
+  <div class="tele" id="teleBar" style="display:none"></div>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =========================================================================
+   AURA-SAT — Telemetry + System 1/2 + Error DNA loop (client-side spine)
+   Local-first: Error DNA Log + Student Model persist in localStorage.
+   ========================================================================= */
+
+/* ---------- device-adaptive telemetry ---------- */
+var DEVICE = (window.matchMedia && window.matchMedia("(pointer:fine)").matches) ? "mouse" : "touch";
+
+var Telemetry = {
+  itemId:null, renderTs:0, predictTs:0, revealTs:0, answerTs:0,
+  scrolls:0, maxScrollV:0, lastScrollTs:0, lastScrollY:0, scrollTrap:false,
+  dwell:{}, // optionIndex -> ms hovered (mouse)
+  start:function(itemId){
+    this.itemId=itemId; this.renderTs=Date.now(); this.predictTs=0; this.revealTs=0; this.answerTs=0;
+    this.scrolls=0; this.maxScrollV=0; this.lastScrollTs=Date.now(); this.lastScrollY=window.scrollY||0;
+    this.scrollTrap=false; this.dwell={};
+  },
+  onScroll:function(){
+    var now=Date.now(), y=window.scrollY||0, dt=Math.max(1,now-this.lastScrollTs), v=Math.abs(y-this.lastScrollY)/dt;
+    this.scrolls++; if(v>this.maxScrollV) this.maxScrollV=v;
+    // spike: >1.5 px/ms sustained = frantic scroll
+    if(v>1.5) this.scrollTrap=true;
+    this.lastScrollY=y; this.lastScrollTs=now;
+  },
+  analyzeMs:function(){ return (this.predictTs||Date.now()) - this.renderTs; },
+  decideMs:function(){ return this.answerTs && this.revealTs ? this.answerTs-this.revealTs : 0; },
+  totalMs:function(){ return (this.answerTs||Date.now()) - this.renderTs; }
+};
+window.addEventListener("scroll", function(){ if(Telemetry.itemId) Telemetry.onScroll(); }, {passive:true});
+
+/* ---------- persistent Student Model + Error DNA (localStorage) ---------- */
+var Model = { xp:0, items:0, correct:0, system1:0, system2:0, s2streak:0, bestStreak:0, trapCounts:{}, immunized:{} };
+var DNALOG = [];
+function loadStore(){
+  try{ var m=JSON.parse(localStorage.getItem("aura.model")||"null"); if(m) Model=Object.assign(Model,m); }catch(e){}
+  try{ var d=JSON.parse(localStorage.getItem("aura.dna")||"null"); if(Array.isArray(d)) DNALOG=d; }catch(e){}
+}
+function saveStore(){
+  try{ localStorage.setItem("aura.model",JSON.stringify(Model)); }catch(e){}
+  try{ localStorage.setItem("aura.dna",JSON.stringify(DNALOG.slice(-200))); }catch(e){}
+}
+loadStore();
+
+/* ---------- trap taxonomy for the Error DNA menu ---------- */
+var TRAPS = {
+  exactWord:{em:"🎯",name:"Exact-Word Match",desc:"I picked it because its words matched the passage."},
+  pivot:{em:"🔀",name:"Missed the Rhetorical Pivot",desc:"I ignored the However/But shift in the text."},
+  modifier:{em:"🔎",name:"Misread a Modifier",desc:"A small word (all, never, only) flipped the meaning."},
+  scope:{em:"🌐",name:"Out of Scope",desc:"I used outside knowledge not stated in the passage."},
+  halfRight:{em:"➗",name:"Half-Right, All-Wrong",desc:"Mostly right, but one word wasn't supported."},
+  confirm:{em:"💬",name:"Confirmation Bias",desc:"I locked onto a favorite and didn't test the others."},
+  rush:{em:"⚡",name:"Rushed / Fatigue (System 1)",desc:"I skimmed and went with a gut pick."},
+  misquestion:{em:"❓",name:"Misread the Question",desc:"Missed least/greatest/except or what was actually asked."},
+  arithmetic:{em:"🧮",name:"Careless Arithmetic",desc:"Right approach, slipped on the computation."},
+  finalstep:{em:"🪜",name:"Right Work, Wrong Final Step",desc:"Solved it but answered the wrong quantity."}
+};
+var RW_TRAPS=["exactWord","pivot","modifier","scope","halfRight","confirm","rush"];
+var MATH_TRAPS=["misquestion","arithmetic","finalstep","modifier","confirm","rush"];
+var FIXES={
+  exactWord:"Reject echoes of the passage's fancy wording — the answer is usually a plain rephrasing.",
+  pivot:"Hunt the pivot (However/Yet). The answer almost always lives AFTER it.",
+  modifier:"Read every modifier separately. One unsupported word = whole choice is garbage.",
+  scope:"If it isn't grounded in THIS passage, reject it — even if it's true in real life.",
+  halfRight:"Run the All-or-Nothing filter: 90% right + 10% wrong = 100% wrong.",
+  confirm:"Test all four choices against the text before committing. No favorites.",
+  rush:"Micro-Reset: shoulders down, 3 belly breaths, then re-read with your cursor as a guide.",
+  misquestion:"Underline exactly what's asked (least? except? in terms of?) before solving.",
+  arithmetic:"Slow the final line. Re-do the last computation once before locking it in.",
+  finalstep:"Circle the quantity the question wants; make sure your answer IS that quantity."
+};
+
+/* ---------- item bank (trap-tagged; expectedReadMs powers System-1 detection) ---------- */
+var BANK = [
+  { id:"a1", section:"R&W", skill:"Words in Context", level:1, expectedReadMs:22000,
+    passage:"The critic praised the director's <b>restraint</b>: rather than flooding every scene with music and spectacle, he trusted silence and stillness to carry the film's emotional weight.",
+    prompt:"As used in the text, \"restraint\" most nearly means:",
+    options:["self-control and discipline","physical force used to hold something back","punishment for a mistake","loud enthusiasm"],
+    correct:0, optionTraps:{1:"exactWord"},
+    metaphor:"Guess the missing lyric before the audio plays — predict a plain synonym first.",
+    rationale:"Context (\"trusted silence and stillness\" instead of \"flooding\" scenes) defines restraint as deliberate self-control.",
+    distractors:{1:"The literal 'hold back physically' meaning — an exact dictionary sense that ignores the film context (Exact-Word/decoy).",2:"'Punishment' isn't supported anywhere.",3:"The opposite of restraint."} },
+  { id:"a2", section:"R&W", skill:"Text Structure & Purpose", level:2, expectedReadMs:30000, pivot:"However",
+    passage:"For decades, coaches assumed that more practice always produced better athletes. <b>However</b>, recent studies show that without adequate rest, additional training actually increases injury rates and stalls improvement.",
+    prompt:"What is the main purpose of the text?",
+    options:["To celebrate how hard modern athletes train","To describe a common coaching belief and then complicate it with new evidence","To argue that athletes should stop practicing","To explain how injuries are treated"],
+    correct:1, optionTraps:{0:"exactWord"},
+    metaphor:"An anime plot twist — the beat drops at 'However' and the hero turns out to be the villain.",
+    rationale:"The structure is claim → 'However' → counter-evidence. The purpose is to present a belief and then complicate it.",
+    distractors:{0:"Echoes 'train hard' wording but misses the pivot that undercuts it (Missed Pivot / Exact-Word).",2:"Too extreme — the text says rest matters, not 'stop practicing' (Modifier/overreach).",3:"Injury treatment is never discussed (Out of Scope)."} },
+  { id:"a3", section:"R&W", skill:"Command of Evidence", level:3, expectedReadMs:26000,
+    passage:"A researcher claims that urban gardens measurably reduce neighborhood stress. She needs data that links gardens specifically to a stress outcome.",
+    prompt:"Which finding, if true, would MOST directly support the researcher's claim?",
+    options:["Residents said the gardens looked beautiful","Neighborhoods with new gardens saw a 22% drop in reported stress versus similar neighborhoods without them","Gardens increased local property values","More people walked past the gardens on weekends"],
+    correct:1, optionTraps:{0:"scope"},
+    metaphor:"Clickbait thumbnail: a real photo (true fact) with a fake caption that doesn't prove the point.",
+    rationale:"The claim is about STRESS. Only a measured stress drop vs. a control group directly supports it.",
+    distractors:{0:"'Beautiful' is a nice true statement but not about stress (Out of Scope / Half-Right).",2:"Property values ≠ stress (Out of Scope).",3:"Foot traffic ≠ stress reduction (Out of Scope)."} },
+  { id:"a4", section:"R&W", skill:"Transitions", level:2, expectedReadMs:20000,
+    passage:"Streaming made niche music easy to find. ______, many small artists say the per-stream payouts are too low to live on.",
+    prompt:"Which transition best completes the text?",
+    options:["As a result,","Nevertheless,","For instance,","In other words,"],
+    correct:1, optionTraps:{0:"confirm"},
+    metaphor:"A comment section flip — the top comment agrees, but the reply flips the whole vibe.",
+    rationale:"Easy discovery would predict good news, but the sentence delivers a downside — that's a contrast, so 'Nevertheless.'",
+    distractors:{0:"'As a result' expects agreement; the clause opposes the first (Confirmation of a wrong pattern).",2:"'For instance' introduces an example, not a contrast.",3:"'In other words' restates; the idea changes direction instead."} },
+  { id:"m1", section:"Math", skill:"Problem-Solving & Data", level:2, expectedReadMs:24000,
+    prompt:"A store's price for a phone case is $12. During a sale, the price is reduced by 25%. Which is the LEAST amount a customer pays for one case on sale?",
+    options:["$3","$9","$12","$15"],
+    correct:1, optionTraps:{0:"misquestion"},
+    metaphor:"Food-delivery receipt — read every line before you assume the total.",
+    rationale:"25% of 12 = 3, so the sale price = 12 − 3 = $9. The 'LEAST amount paid' is the sale price, $9.",
+    distractors:{0:"$3 is the discount, not the price paid — the classic 'answer the discount' trap (Misread the Question).",2:"$12 ignores the discount entirely.",3:"$15 adds the discount."} },
+  { id:"m2", section:"Math", skill:"Algebra", level:2, expectedReadMs:26000,
+    prompt:"If 4(x − 3) = 24, what is the value of x − 3?",
+    options:["3","6","9","24"],
+    correct:1, optionTraps:{2:"finalstep"},
+    metaphor:"Anime filler episode — don't do extra work the plot never asked for.",
+    rationale:"The question asks for (x − 3), not x. Divide both sides by 4: x − 3 = 6. (You don't even need x.)",
+    distractors:{0:"3 solves further to a wrong value.",2:"9 is x (since x−3=6 → x=9) — solving one step too far and answering the wrong quantity (Right Work, Wrong Final Step).",3:"24 is the right side untouched."} },
+  { id:"m3", section:"Math", skill:"Advanced Math", level:3, expectedReadMs:30000,
+    prompt:"The expression x² − 9 is equivalent to which of the following?",
+    options:["(x − 3)(x − 3)","(x − 3)(x + 3)","(x − 9)(x + 1)","x(x − 9)"],
+    correct:1, optionTraps:{0:"exactWord"},
+    metaphor:"Two videos with near-identical thumbnails — one detail is different.",
+    rationale:"Difference of squares: x² − 9 = (x − 3)(x + 3). Check by FOIL: x² + 3x − 3x − 9 = x² − 9. ✓",
+    distractors:{0:"(x−3)(x−3) = x²−6x+9, a perfect-square look-alike (attractive twin).",2:"(x−9)(x+1)=x²−8x−9, wrong.",3:"x(x−9)=x²−9x, wrong."} }
+];
+
+/* ---------- engine state ---------- */
+var SESSION_LEN=6;
+var state={ idx:0, phase:"read", item:null, order:[], sel:-1, predAns:"", micro:"", correctThisSession:0 };
+
+function buildOrder(){
+  // alternate sections, keep it simple for the spine
+  var rw=BANK.filter(function(x){return x.section==="R&W";});
+  var m=BANK.filter(function(x){return x.section==="Math";});
+  var out=[],i=0;
+  while(out.length<SESSION_LEN && (rw.length||m.length)){
+    if(i%2===0 && rw.length) out.push(rw.shift());
+    else if(m.length) out.push(m.shift());
+    else if(rw.length) out.push(rw.shift());
+    i++;
+  }
+  return out;
+}
+
+var app=document.getElementById("app");
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
+function setChip(t){document.getElementById("statusChip").textContent=t;}
+
+/* ---------- live telemetry bar ---------- */
+function renderTele(){
+  var bar=document.getElementById("teleBar"); if(state.phase==="boot"||state.phase==="done"){bar.style.display="none";return;}
+  bar.style.display="flex"; bar.innerHTML="";
+  var fatigue=Math.round((state.idx/SESSION_LEN)*100);
+  add(bar,"⏱ "+(Telemetry.totalMs()/1000|0)+"s","");
+  add(bar,"🖱 "+DEVICE,"");
+  add(bar,"😮‍💨 fatigue "+fatigue+"%", fatigue>=66?"warn":"");
+  if(Telemetry.scrollTrap) add(bar,"🌀 Scroll-Trap","warn");
+  add(bar,"🔥 S2 streak "+Model.s2streak, Model.s2streak>0?"sys2":"");
+  function add(p,txt,cls){ var s=el("span","t"+(cls?" "+cls:""),txt); p.appendChild(s); }
+}
+setInterval(function(){ if(state.item && (state.phase==="read"||state.phase==="choose")) renderTele(); },1000);
+
+/* ---------- flow ---------- */
+function startSession(){
+  state.order=buildOrder(); state.idx=0; state.correctThisSession=0;
+  document.body.classList.toggle("linetrack", DEVICE==="mouse");
+  loadItem();
+}
+function loadItem(){
+  if(state.idx>=state.order.length){ return showSummary(); }
+  state.item=state.order[state.idx]; state.phase="read"; state.sel=-1; state.predAns=""; state.micro="";
+  Telemetry.start(state.item.id);
+  renderRead();
+}
+
+/* PHASE 1 — DIAGNOSE: read, then force a micro-summary + prediction BEFORE options */
+function renderRead(){
+  app.innerHTML=""; setChip("Q"+(state.idx+1)+"/"+state.order.length+" · Diagnose"); renderTele();
+  var prog=el("div","prog"); for(var j=0;j<state.order.length;j++) prog.appendChild(el("i",j<state.idx?"done":(j===state.idx?"cur":""))); app.appendChild(prog);
+  var it=state.item;
+  var card=el("div","card");
+  card.appendChild(el("div","sub",it.section+" · "+it.skill));
+  if(it.passage) card.appendChild(el("div","passage",it.passage));
+  card.appendChild(el("div","prompt",it.prompt));
+  if(it.metaphor) card.appendChild(el("div","metaphor","💡 "+it.metaphor));
+
+  card.appendChild(el("div","lbl","Step 1 · Micro-Summary (3–5 words)"));
+  var micro=el("textarea","txt"); micro.rows=1; micro.placeholder="e.g., belief, then twist"; card.appendChild(micro);
+  card.appendChild(el("div","lbl","Step 2 · Predict the answer (before you see choices)"));
+  var pred=el("textarea","txt"); pred.rows=1; pred.placeholder="Say it in plain words — a guess is fine"; card.appendChild(pred);
+
+  var go=el("button","btn","Lock prediction → reveal choices"); go.disabled=true; go.style.marginTop="12px";
+  function chk(){ go.disabled=!(micro.value.trim().length>=3 && pred.value.trim().length>=2); }
+  micro.oninput=chk; pred.oninput=chk;
+  go.onclick=function(){
+    state.micro=micro.value.trim(); state.predAns=pred.value.trim();
+    Telemetry.predictTs=Date.now();
+    var analyze=Telemetry.analyzeMs(), expected=it.expectedReadMs;
+    // System-1 rush BEFORE choosing → force a Micro-Reset
+    if(analyze < expected*0.30 || Telemetry.scrollTrap){
+      forceMicroReset(analyze,expected);
+    } else { renderChoose(); }
+  };
+  card.appendChild(go);
+  app.appendChild(card);
+  window.scrollTo(0,0);
+}
+
+/* System-2 forcing: 15s Micro-Reset overlay */
+function forceMicroReset(analyze,expected){
+  var ov=el("div","reset");
+  ov.appendChild(el("div",null,"<div style='font-size:.75rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#f9c07a'>⚡ System 1 detected · Scroll-Trap</div>"));
+  ov.appendChild(el("div","lead","You reached the choices in "+(analyze/1000).toFixed(1)+"s — this item needs about "+(expected/1000|0)+"s of analysis. That's browse-mode, like 1 a.m. doomscrolling. Let's flip to System 2."));
+  var b=el("div","breath","Breathe");
+  ov.appendChild(b);
+  ov.appendChild(el("div","lead","Drop your shoulders. In through the nose (4s)… out slowly (4s). ×3."));
+  var t=15; var cd=el("button","btn","Resetting… "+t+"s"); cd.disabled=true; ov.appendChild(cd);
+  document.body.appendChild(ov);
+  var iv=setInterval(function(){ t--; cd.textContent=t>0?("Resetting… "+t+"s"):"Continue with fresh eyes →"; if(t<=0){ clearInterval(iv); cd.disabled=false; b.textContent="Ready"; cd.onclick=function(){ document.body.removeChild(ov); renderChoose(); }; } },1000);
+}
+
+/* PHASE 2 — CHOOSE */
+function renderChoose(){
+  state.phase="choose"; app.innerHTML=""; setChip("Q"+(state.idx+1)+"/"+state.order.length+" · Choose"); Telemetry.revealTs=Date.now(); renderTele();
+  var prog=el("div","prog"); for(var j=0;j<state.order.length;j++) prog.appendChild(el("i",j<state.idx?"done":(j===state.idx?"cur":""))); app.appendChild(prog);
+  var it=state.item;
+  var card=el("div","card");
+  card.appendChild(el("div","sub",it.section+" · "+it.skill));
+  if(it.passage) card.appendChild(el("div","passage",it.passage));
+  card.appendChild(el("div","prompt",it.prompt));
+  card.appendChild(el("div","fb alert","<div class='v'>🧠 Your prediction</div><div class='why'>Micro-summary: <b>"+esc(state.micro)+"</b><br>You predicted: <b>"+esc(state.predAns)+"</b><br>Now test EACH choice against that — don't just hunt for a match.</div>"));
+  var ul=el("div","list");
+  it.options.forEach(function(o,idx){
+    var li=el("div","opt");
+    li.appendChild(el("span","k",String.fromCharCode(65+idx)));
+    li.appendChild(el("span",null,o));
+    // mouse dwell telemetry
+    li.addEventListener("mouseenter",function(){ li._t=Date.now(); });
+    li.addEventListener("mouseleave",function(){ if(li._t){ Telemetry.dwell[idx]=(Telemetry.dwell[idx]||0)+(Date.now()-li._t); li._t=0; } });
+    li.onclick=function(){ if(state.phase!=="choose")return; state.sel=idx; [].forEach.call(ul.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); sub.disabled=false; };
+    ul.appendChild(li);
+  });
+  card.appendChild(ul);
+  var sub=el("button","btn","Submit"); sub.disabled=true;
+  sub.onclick=function(){ if(state.sel<0)return; Telemetry.answerTs=Date.now(); grade(); };
+  card.appendChild(sub);
+  app.appendChild(card);
+  window.scrollTo(0,0);
+}
+
+/* classify behavior for the marker readout */
+function behaviorReadout(){
+  var it=state.item, analyze=Telemetry.analyzeMs(), decide=Telemetry.decideMs(), total=Telemetry.totalMs();
+  var system1 = (analyze < it.expectedReadMs*0.35) || (Telemetry.scrollTrap && decide<2500) || (decide<1500);
+  var marker;
+  if(system1) marker="⚡ System 1 Skimming Detected — you decided in "+(total/1000).toFixed(1)+"s; this item calls for ~"+(it.expectedReadMs/1000|0)+"s.";
+  else marker="🐢 System 2 pace — good, you took time to analyze.";
+  // exact-word magnet (mouse dwell on a trap option that was chosen or lingered)
+  var trapIdx=null; Object.keys(it.optionTraps||{}).forEach(function(k){ trapIdx=parseInt(k,10); });
+  var magnet=false;
+  if(DEVICE==="mouse" && trapIdx!=null){ var maxIdx=-1,maxV=0; Object.keys(Telemetry.dwell).forEach(function(k){ if(Telemetry.dwell[k]>maxV){maxV=Telemetry.dwell[k];maxIdx=parseInt(k,10);} }); if(maxIdx===trapIdx && maxV>1200) magnet=true; }
+  return { system1:system1, marker:marker, magnet:magnet };
+}
+
+/* PHASE 3 — grade → if wrong, Error DNA loop (no answer reveal yet) */
+function grade(){
+  var it=state.item, correct=(state.sel===it.correct);
+  var b=behaviorReadout();
+  Model.items++; if(b.system1){Model.system1++; Model.s2streak=0;} else {Model.system2++;}
+  if(correct){
+    Model.correct++; Model.xp+=b.system1?5:12; if(!b.system1){ Model.s2streak++; if(Model.s2streak>Model.bestStreak)Model.bestStreak=Model.s2streak; }
+    state.correctThisSession++; saveStore(); renderCorrect(b);
+  } else {
+    Model.s2streak=0; saveStore(); renderErrorDNA(b);
+  }
+}
+
+function renderCorrect(b){
+  state.phase="review"; app.innerHTML=""; setChip("Q"+(state.idx+1)+"/"+state.order.length+" · Correct");
+  var it=state.item;
+  var card=el("div","card");
+  card.appendChild(el("div","fb good","<div class='v'>✅ Correct — prediction confirmed</div><div class='why'>"+it.rationale+"</div>"+(b.system1?"<div class='fix'>⚠️ You got it, but at System-1 speed. On the real test that pace causes silent misses — keep the System-2 discipline.</div>":"<div class='fix'>🐢 System-2 win: +12 XP. This is exactly the pace that beats the test writers.</div>")));
+  card.appendChild(nextBtn());
+  app.appendChild(card); window.scrollTo(0,0);
+}
+
+/* the heart of AURA: metacognitive error logging */
+function renderErrorDNA(b){
+  state.phase="dna"; app.innerHTML=""; setChip("Q"+(state.idx+1)+"/"+state.order.length+" · Error DNA");
+  var it=state.item;
+  var card=el("div","card");
+  card.appendChild(el("div","fb bad","<div class='v'>❌ Not yet — and I'm NOT telling you the answer</div><div class='why'><b>Behavioral marker:</b> "+b.marker+(b.magnet?"<br>🎯 <b>Exact-Word Magnet:</b> you lingered longest on the choice that echoes the passage.":"")+"</div></div>"));
+
+  card.appendChild(el("div","lbl","Step 1 · In your words, why did you pick that?"));
+  var why=el("textarea","txt"); why.rows=2; why.placeholder="e.g., 'the words matched the passage' / 'I assumed…' / 'I rushed'"; card.appendChild(why);
+
+  card.appendChild(el("div","lbl","Step 2 · Classify the trap that caught you"));
+  var pool=(it.section==="Math"?MATH_TRAPS:RW_TRAPS).slice(); if(b.system1 && pool.indexOf("rush")<0) pool.push("rush");
+  var chosen=null; var grid=el("div","dna");
+  pool.forEach(function(key){
+    var t=TRAPS[key]; var o=el("div","dnaopt","<span class='em'>"+t.em+"</span> <span><b>"+t.name+"</b><small>"+t.desc+"</small></span>");
+    o.onclick=function(){ chosen=key; [].forEach.call(grid.children,function(c){c.classList.remove("sel");}); o.classList.add("sel"); rev.disabled=!(why.value.trim().length>=4); };
+    grid.appendChild(o);
+  });
+  card.appendChild(grid);
+  why.oninput=function(){ rev.disabled=!(chosen && why.value.trim().length>=4); };
+
+  var rev=el("button","btn pink","Log it → reveal the trap & fix"); rev.disabled=true; rev.style.marginTop="6px";
+  rev.onclick=function(){
+    // write to Error DNA log + model
+    Model.trapCounts[chosen]=(Model.trapCounts[chosen]||0)+1;
+    DNALOG.push({ ts:Date.now(), itemId:it.id, section:it.section, skill:it.skill, trap:chosen, why:why.value.trim().slice(0,240), system1:b.system1 });
+    saveStore();
+    renderReview(chosen);
+  };
+  card.appendChild(rev);
+  app.appendChild(card); window.scrollTo(0,0);
+}
+
+/* PHASE 3b — REVIEW: reveal correct + the trap mechanism + tactical fix */
+function renderReview(chosen){
+  state.phase="review"; app.innerHTML=""; setChip("Q"+(state.idx+1)+"/"+state.order.length+" · Review");
+  var it=state.item;
+  var card=el("div","card");
+  // show options graded now
+  var ul=el("div","list");
+  it.options.forEach(function(o,idx){
+    var cls="opt disabled"+(idx===it.correct?" correct":(idx===state.sel?" wrong":""));
+    var li=el("div",cls); li.appendChild(el("span","k",String.fromCharCode(65+idx))); li.appendChild(el("span",null,o)); ul.appendChild(li);
+  });
+  card.appendChild(ul);
+  var chosenNote=(it.distractors&&it.distractors[state.sel])?it.distractors[state.sel]:"That choice isn't supported by the text.";
+  card.appendChild(el("div","fb bad","<div class='v'>Answer: "+String.fromCharCode(65+it.correct)+"</div><div class='why'><b>Why it's right:</b> "+it.rationale+"</div><div class='why' style='margin-top:6px'><b>Why your pick was the trap:</b> "+chosenNote+"</div>"));
+  card.appendChild(el("div","fb alert","<div class='v'>"+TRAPS[chosen].em+" You logged: "+TRAPS[chosen].name+"</div><div class='fix'>🛠 Tactical fix for next time: "+FIXES[chosen]+"</div>"));
+  card.appendChild(nextBtn());
+  app.appendChild(card); window.scrollTo(0,0);
+}
+
+function nextBtn(){
+  var last=(state.idx>=state.order.length-1);
+  var b=el("button","btn gold",last?"See my cognitive report →":"Next diagnostic →"); b.style.marginTop="10px";
+  b.onclick=function(){ state.idx++; loadItem(); };
+  return b;
+}
+
+/* ---------- session summary ---------- */
+function showSummary(){
+  state.phase="done"; app.innerHTML=""; setChip("Report"); document.getElementById("teleBar").style.display="none";
+  var acc=Model.items?Math.round(Model.correct/Model.items*100):0;
+  var s1rate=Model.items?Math.round(Model.system1/Model.items*100):0;
+  var head=el("div","card center");
+  head.appendChild(el("div","lead","This session"));
+  head.appendChild(el("div","big",state.correctThisSession+"/"+state.order.length));
+  head.appendChild(el("div","lead","questions correct"));
+  var st=el("div","stat");
+  st.innerHTML="<div class='s'><b style='color:var(--cyan)'>"+Model.xp+"</b><span>Total XP</span></div><div class='s'><b style='color:var(--green)'>"+Model.bestStreak+"</b><span>Best S2 streak</span></div><div class='s'><b style='color:"+(s1rate>40?'var(--red)':'var(--green)')+"'>"+s1rate+"%</b><span>System-1 rate</span></div>";
+  head.appendChild(st); app.appendChild(head);
+  app.appendChild(dnaPanel(true));
+  var again=el("button","btn","Run another diagnostic set →"); again.onclick=startSession; app.appendChild(again);
+  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="8px"; home.onclick=function(){location.href="./";}; app.appendChild(home);
+  app.appendChild(el("div","note","Local-first: your Error DNA is stored only on this device (nothing is uploaded). Projected mastery is a study estimate."));
+  window.scrollTo(0,0);
+}
+
+/* ---------- Error DNA dashboard (overlay) ---------- */
+function dnaPanel(inline){
+  var wrap=el("div","card");
+  wrap.appendChild(el("h2",null,"🧬 Your Error DNA — Vulnerability Map"));
+  var keys=Object.keys(Model.trapCounts).sort(function(a,b){return Model.trapCounts[b]-Model.trapCounts[a];});
+  if(!keys.length){ wrap.appendChild(el("p","lead","No traps logged yet. As you miss items and classify them, your recurring vulnerabilities surface here — so you can immunize against them.")); return wrap; }
+  var max=Model.trapCounts[keys[0]]||1;
+  keys.forEach(function(k){
+    var t=TRAPS[k]||{em:"•",name:k}; var n=Model.trapCounts[k];
+    var row=el("div","dnabar");
+    row.innerHTML="<div class='h'><span>"+t.em+" "+t.name+"</span><span style='color:var(--pink)'>"+n+"×</span></div>";
+    var bar=el("div","bar"); var i=el("i"); i.style.width=Math.round(n/max*100)+"%"; bar.appendChild(i); row.appendChild(bar);
+    row.appendChild(el("div","fix","<span style='font-size:.75rem;color:var(--muted);font-weight:600'>🛠 "+(FIXES[k]||"")+"</span>"));
+    wrap.appendChild(row);
+  });
+  return wrap;
+}
+document.getElementById("dnaBtn").onclick=function(){
+  var ov=el("div","reset"); ov.style.justifyContent="flex-start"; ov.style.overflowY="auto"; ov.style.padding="20px 14px";
+  var inner=el("div"); inner.style.maxWidth="560px"; inner.style.width="100%"; inner.style.margin="0 auto";
+  inner.appendChild(dnaPanel());
+  var close=el("button","btn ghost","Close"); close.onclick=function(){document.body.removeChild(ov);}; inner.appendChild(close);
+  ov.appendChild(inner); document.body.appendChild(ov);
+};
+
+function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}); }
+
+/* ---------- boot / greeting ---------- */
+function boot(){
+  state.phase="boot"; setChip("Boot"); app.innerHTML="";
+  app.appendChild(el("h1",null,"◈ AURA-SAT"));
+  app.appendChild(el("div","lead","Your <b>predictive cognitive tutor</b>. I don't just grade answers — I read <b>how you think</b>. I track your pace, scrolling, and choices in real time to catch the exact moment the test writers try to trick you, then I rewire the habit. Goal: <b>1330+</b>."));
+  var c=el("div","card");
+  c.innerHTML="<h2>How we beat the test together</h2>";
+  [["🧠","Predict first","You'll write a 3–5 word micro-summary and predict the answer BEFORE seeing choices — this forces slow, analytical System-2 thinking."],
+   ["📡","I watch the tells","Rush, frantic scrolling, or lingering on 'word-match' decoys triggers a live alert and a 15-second Micro-Reset."],
+   ["🧬","Error DNA","Miss one and I won't hand you the answer. You'll say why you fell for it and classify the trap — building a map of your vulnerabilities to immunize against."]
+  ].forEach(function(t){ var d=el("div"); d.style.margin="10px 0"; d.innerHTML="<b style='font-size:.95rem'>"+t[0]+" "+t[1]+"</b><div style='font-size:.84rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[2]+"</div>"; c.appendChild(d); });
+  app.appendChild(c);
+  if(Model.items>0){ app.appendChild(dnaPanel()); }
+  var go=el("button","btn","⚡ Start diagnostic — let's read your mind"); go.onclick=startSession; app.appendChild(go);
+  app.appendChild(el("div","note","Device detected: "+DEVICE+" · telemetry adapts automatically. Local-first — your data never leaves this device."));
+  window.scrollTo(0,0);
+}
+boot();
+</script>
+</body>
+</html>

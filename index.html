@@ -27,6 +27,10 @@
   a.card.fast .glow{background:radial-gradient(120% 120% at 0% 0%,var(--purple),transparent 60%)}
   a.card.sat{border-color:rgba(6,182,212,.5)}
   a.card.sat .glow{background:radial-gradient(120% 120% at 100% 0%,var(--cyan),transparent 60%)}
+  a.card.aura{border-color:rgba(139,92,246,.75);box-shadow:0 0 30px rgba(139,92,246,.14)}
+  a.card.aura .glow{background:radial-gradient(130% 130% at 50% 0%,var(--purple),transparent 60%);opacity:.22}
+  .aura .ic{background:linear-gradient(135deg,var(--cyan),var(--purple))}
+  .flag{display:inline-block;font-size:.58rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#0a0720;background:linear-gradient(135deg,var(--cyan),#c4b5fd);border-radius:6px;padding:.14rem .45rem;margin-left:6px;vertical-align:middle}
   .row1{display:flex;align-items:center;gap:12px;position:relative}
   .ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0}
   .fast .ic{background:linear-gradient(135deg,var(--purple),var(--blue))}
@@ -49,9 +53,23 @@
     <div class="logo">ElevatED U</div>
     <div class="tag">Sovereign Learning Engine</div>
   </div>
-  <div class="sub">Two adaptive test-prep engines. Pick your mission — each gives instant feedback, detailed answer explanations, and a read-aloud voice-over.</div>
+  <div class="sub">Adaptive test-prep engines. Pick your mission — each gives instant feedback, detailed answer explanations, and a read-aloud voice-over.</div>
 
   <div class="pick">Choose an engine</div>
+
+  <a class="card aura" href="aura.html">
+    <div class="glow"></div>
+    <span class="go">›</span>
+    <div class="row1">
+      <div class="ic">◈</div>
+      <div>
+        <div class="ttl">AURA-SAT <span class="flag">Flagship</span></div>
+        <div class="meta">Predictive Cognitive Tutor · 1330+</div>
+      </div>
+    </div>
+    <div class="desc">Next-generation AI tutor that trains <b style="color:#bff4fb">how you think</b>, not just what you answer. Real-time behavioral telemetry catches rushing, scroll-traps, and word-match decoys — then rewires the habit through Error-DNA logging.</div>
+    <div class="chips"><span class="c">Telemetry</span><span class="c">System 1 vs 2</span><span class="c">🧬 Error DNA</span><span class="c">New</span></div>
+  </a>
 
   <a class="card fast" href="fast.html">
     <div class="glow"></div>
