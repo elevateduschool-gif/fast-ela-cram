@@ -44,6 +44,10 @@
   .btn:disabled{opacity:.45;cursor:not-allowed}
   .btn.ghost{background:#1a1030;border:1px solid var(--border);color:var(--muted)}
   .btn.gold{background:linear-gradient(135deg,var(--orange),var(--gold));color:#231}
+  .spkrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+  .spk{display:inline-flex;align-items:center;gap:5px;background:#231640;border:1px solid var(--purple);color:#d9c9ff;border-radius:999px;padding:.32rem .7rem;font-size:.72rem;font-weight:800;font-family:inherit;cursor:pointer}
+  .spk:active{transform:translateY(1px)}
+  .spk.on{background:var(--purple);color:#fff}
   .list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:10px 0}
   .opt{display:flex;gap:10px;align-items:flex-start;background:#0d0820;border:1.5px solid var(--border);border-radius:12px;padding:.7rem .8rem;cursor:pointer;font-size:.95rem;font-weight:600;text-align:left;transition:border-color .15s,background .15s}
   .opt .k{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;color:var(--muted);margin-top:1px}
@@ -134,6 +138,115 @@ var STANDARD_NAMES = {
 };
 
 /* ---- ITEM BANK: passages grouped as adaptive sets by level ---- */
+/* ---------------- VOICE-OVER (Web Speech API) ---------------- */
+var TTS = {
+  supported: (typeof window!=="undefined") && ("speechSynthesis" in window),
+  voice: null,
+  rate: 0.95,
+  pickVoice: function(){
+    if(!this.supported) return;
+    var vs = window.speechSynthesis.getVoices() || [];
+    this.voice =
+      vs.find(function(v){return /en[-_]US/i.test(v.lang) && /(Samantha|Natural|Google US English|Aaron|Ava|Allison|Nicky)/i.test(v.name);}) ||
+      vs.find(function(v){return /^en/i.test(v.lang) && /Google/i.test(v.name);}) ||
+      vs.find(function(v){return /^en/i.test(v.lang);}) || vs[0] || null;
+  },
+  stop: function(){ if(this.supported){ try{ window.speechSynthesis.cancel(); }catch(e){} } },
+  speaking: function(){ return this.supported && window.speechSynthesis.speaking; },
+  speakQueue: function(parts, onDone){
+    if(!this.supported || !parts || !parts.length){ if(onDone)onDone(); return; }
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+    var self=this;
+    parts.forEach(function(p, idx){
+      if(!p) return;
+      var u=new SpeechSynthesisUtterance(String(p));
+      if(self.voice) u.voice=self.voice;
+      u.rate=self.rate; u.pitch=1; u.lang="en-US";
+      if(idx===parts.length-1 && onDone) u.onend=onDone;
+      window.speechSynthesis.speak(u);
+    });
+  }
+};
+if(TTS.supported){ TTS.pickVoice(); try{ window.speechSynthesis.onvoiceschanged=function(){TTS.pickVoice();}; }catch(e){} }
+
+function LTR(i){ return String.fromCharCode(65+i); }
+function stripToSpeech(s){
+  return String(s==null?"":s)
+    .replace(/<[^>]+>/g," ")
+    .replace(/&amp;/g,"and").replace(/&lt;/g,"less than").replace(/&gt;/g,"greater than")
+    .replace(/[“”]/g,'"').replace(/[‘’]/g,"'")
+    .replace(/[—–]/g,", ")
+    .replace(/\s+/g," ").trim();
+}
+// Read the question prompt + all options aloud (skips ASCII-art image field)
+function speakQuestion(it, onDone){
+  var parts=[];
+  if(it.format==="ebsr"){
+    parts.push("Part A. "+stripToSpeech(it.partA.prompt));
+    it.partA.options.forEach(function(o,i){ parts.push("Option "+LTR(i)+". "+stripToSpeech(o)); });
+    parts.push("Part B. "+stripToSpeech(it.partB.prompt));
+    it.partB.options.forEach(function(o,i){ parts.push("Option "+LTR(i)+". "+stripToSpeech(o)); });
+  } else if(it.format==="categorize"){
+    parts.push(stripToSpeech(it.prompt));
+    parts.push("The categories are: "+it.categories.join(", ")+".");
+    it.rows.forEach(function(r,i){ parts.push("Item "+(i+1)+". "+stripToSpeech(r.text)); });
+  } else {
+    parts.push(stripToSpeech(it.prompt));
+    if(it.format==="multi") parts.push("Select "+it.need+".");
+    (it.options||[]).forEach(function(o,i){ parts.push("Option "+LTR(i)+". "+stripToSpeech(o)); });
+  }
+  TTS.speakQueue(parts, onDone);
+}
+// Narrate the full process of elimination, option by option, with reasons
+function speakElimination(it, onDone){
+  var parts=["Let's work through this by process of elimination."];
+  var g;
+  if(it.format==="ebsr"){
+    parts.push("Start with Part A.");
+    it.partA.options.forEach(function(o,i){
+      var lead="Option "+LTR(i)+". "+stripToSpeech(o)+". ";
+      if(i===it.partA.correct){ parts.push(lead+"This one is correct. "+stripToSpeech(it.rationale)); }
+      else { g=it.distractors&&it.distractors["A("+LTR(i)+")"]; parts.push(lead+"Cross it out. "+(g?stripToSpeech(g):"It does not match the whole passage.")); }
+    });
+    parts.push("Now Part B, the evidence.");
+    it.partB.options.forEach(function(o,i){
+      var lead="Option "+LTR(i)+". "+stripToSpeech(o)+". ";
+      if(i===it.partB.correct){ parts.push(lead+"This is the quotation that actually proves Part A."); }
+      else { g=it.distractors&&it.distractors["B("+LTR(i)+")"]; parts.push(lead+"Cross it out. "+(g?stripToSpeech(g):"It does not support the answer.")); }
+    });
+    parts.push("Remember, on an evidence question Part A and Part B must match. The answers are "+LTR(it.partA.correct)+" and "+LTR(it.partB.correct)+".");
+  } else if(it.format==="multi"){
+    parts.push("You must pick "+it.need+". Check every choice on its own.");
+    it.options.forEach(function(o,i){
+      var lead="Option "+LTR(i)+". "+stripToSpeech(o)+". ";
+      if(it.correct.indexOf(i)>=0){ parts.push(lead+"This one counts."); }
+      else { g=it.distractors&&it.distractors[String(i)]; parts.push(lead+"Cross it out. "+(g?stripToSpeech(g):"It may be true, but it does not answer the question.")); }
+    });
+    parts.push("So the "+it.need+" correct choices are "+it.correct.map(LTR).join(" and ")+". "+stripToSpeech(it.rationale));
+  } else if(it.format==="categorize"){
+    parts.push(stripToSpeech(it.rationale));
+    it.rows.forEach(function(r){ parts.push("The statement, "+stripToSpeech(r.text)+", goes under "+it.categories[r.cat]+"."); });
+  } else {
+    it.options.forEach(function(o,i){
+      var lead="Option "+LTR(i)+". "+stripToSpeech(o)+". ";
+      if(i===it.correct){ parts.push(lead+"This one is correct. "+stripToSpeech(it.rationale)); }
+      else { g=it.distractors&&it.distractors[String(i)]; parts.push(lead+"Cross it out. "+(g?stripToSpeech(g):"It does not match the text.")); }
+    });
+    parts.push("The answer is "+LTR(it.correct)+".");
+  }
+  TTS.speakQueue(parts, onDone);
+}
+// Toggle-style speak button factory
+function speakBtn(label, run){
+  var b=el("button","spk",label);
+  b.onclick=function(){
+    if(TTS.speaking()){ TTS.stop(); b.textContent=label; b.classList.remove("on"); return; }
+    b.textContent="⏹ Stop"; b.classList.add("on");
+    run(function(){ b.textContent=label; b.classList.remove("on"); });
+  };
+  return b;
+}
+
 var BANK = [
   /* ============ P1  LITERARY PROSE  L3 ============ */
   {
@@ -597,6 +710,7 @@ var passageOpen=true;
 function setChip(t){document.getElementById("statusChip").textContent=t;}
 
 function render(){
+  TTS.stop();
   app.innerHTML="";
   var p=state.passage, it=state.queue[state.qIndex];
   setChip("Set "+(state.setsDone+1)+" · Q"+(state.qIndex+1)+"/"+state.queue.length+" · L"+p.level);
@@ -608,6 +722,16 @@ function render(){
   head.appendChild(el("h3",null,p.title));
   head.appendChild(el("div","by",p.genre+" · "+p.by));
   head.appendChild(el("div","pfccue","🧭 <b>PFC</b> — read the whole passage once, actively: mark the <b>main idea</b> · <b>tone</b> · any <b>shift</b> · <b>figurative language</b>. Then let the questions send you back for evidence."));
+  if(TTS.supported){
+    var vrow=el("div","spkrow");
+    vrow.appendChild(speakBtn("🔊 Read passage", function(done){ TTS.speakQueue(p.paras.map(stripToSpeech), done); }));
+    var rates=[0.8,0.95,1.15], rlabels=["0.8×","1×","1.2×"], ri=1;
+    TTS.rate=rates[ri];
+    var sp=el("button","spk","⚙ Speed "+rlabels[ri]);
+    sp.onclick=function(){ ri=(ri+1)%rates.length; TTS.rate=rates[ri]; sp.textContent="⚙ Speed "+rlabels[ri]; };
+    vrow.appendChild(sp);
+    head.appendChild(vrow);
+  }
   pc.appendChild(head);
   var body=el("div");
   for(var i=0;i<p.paras.length;i++){
@@ -651,6 +775,11 @@ function renderItem(it){
   qh.appendChild(el("span","qn","Question "+(state.qIndex+1)));
   qh.appendChild(el("span","fmt",fmtLabel(it.format)));
   card.appendChild(qh);
+  if(TTS.supported){
+    var qrow=el("div","spkrow");
+    qrow.appendChild(speakBtn("🔊 Read question", function(done){ speakQuestion(it, done); }));
+    card.appendChild(qrow);
+  }
 
   var answered=false;
   var submit=el("button","btn","Submit Answer");
@@ -810,6 +939,11 @@ function feedback(it,cls,verdict,distractNote,extraHtml){
   if(extraHtml) f.appendChild(el("div","why",extraHtml));
   if(distractNote){ f.appendChild(el("div","dis","<b>🔍 Where it slipped:</b> "+distractNote)); }
   f.appendChild(el("div","std",it.standard+" · "+(STANDARD_NAMES[it.standard]||"")));
+  if(TTS.supported){
+    var wrow=el("div","spkrow"); wrow.style.margin="10px 0 0";
+    wrow.appendChild(speakBtn("🔊 Walk me through it", function(done){ speakElimination(it, done); }));
+    f.appendChild(wrow);
+  }
   return f;
 }
 
@@ -818,6 +952,7 @@ function nextBtn(){
   var b=el("button","btn gold",last?"Finish this set →":"Next question →");
   b.style.marginTop="10px";
   b.onclick=function(){
+    TTS.stop();
     if(state.qIndex<state.queue.length-1){ state.qIndex++; render(); }
     else{ endSet(); }
   };
@@ -938,6 +1073,7 @@ var FOCUS_TIPS={
 };
 
 function resetAll(toBriefing){
+  TTS.stop();
   state.targetLevel=3; state.usedPassages={}; state.setsDone=0; state.queue=[]; state.qIndex=0;
   state.passage=null; state.setResults=[]; state.responses=[]; state.perStd={};
   document.getElementById("mFill").style.width="0%";
