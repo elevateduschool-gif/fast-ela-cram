@@ -277,6 +277,7 @@ function recordResponse(it,frac){
   state.responses.push({skill:it.skill,section:it.section,level:it.level,frac:frac,pos:state.answered});
   if(!state.perSkill[it.skill]) state.perSkill[it.skill]={sum:0,n:0};
   state.perSkill[it.skill].sum+=frac; state.perSkill[it.skill].n++;
+  if(window.AURA_PLATFORM){ try{ AURA_PLATFORM.logEvent({engine:"pert",section:it.section,skill:it.skill,item_id:it.id,correct:frac>=1,frac:frac,pos:state.answered}); AURA_PLATFORM.bumpDNA("skill",it.skill,frac>=1); }catch(e){} }
 }
 function projectedScore(){
   if(!state.responses.length) return null;
@@ -572,5 +573,7 @@ function renderBriefing(){
 }
 renderBriefing();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="platform.js"></script>
 </body>
 </html>

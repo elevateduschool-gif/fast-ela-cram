@@ -49,6 +49,21 @@
   .soon{display:inline-block;font-size:.6rem;font-weight:900;letter-spacing:.5px;text-transform:uppercase;color:#231;background:var(--gold);border-radius:6px;padding:.12rem .4rem;margin-left:6px;vertical-align:middle}
   .foot{color:var(--muted);font-size:.72rem;font-weight:600;text-align:center;margin-top:26px;line-height:1.6}
   .foot b{color:#cdbef0}
+  .acct{margin-top:14px;display:flex;justify-content:center;gap:8px;align-items:center;flex-wrap:wrap;font-size:.8rem;font-weight:700;color:var(--muted)}
+  .acct button{font-family:inherit;font-weight:800;font-size:.76rem;border-radius:999px;padding:.4rem .85rem;cursor:pointer;border:1px solid var(--purple);background:#160f2e;color:#d9c9ff}
+  .modal{position:fixed;inset:0;z-index:200;background:rgba(8,7,20,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
+  .modal .box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;max-width:380px;width:100%}
+  .modal h3{font-size:1.15rem;font-weight:900;margin-bottom:4px}
+  .modal .lead2{font-size:.82rem;color:var(--muted);font-weight:600;margin-bottom:12px}
+  .modal input{width:100%;background:#0d0820;border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;color:var(--text);font-family:inherit;font-size:.95rem;font-weight:600;margin-bottom:8px;outline:none}
+  .modal input:focus{border-color:var(--purple)}
+  .modal .consent{display:flex;gap:8px;align-items:flex-start;font-size:.72rem;color:var(--muted);font-weight:600;margin:4px 0 12px;line-height:1.4}
+  .modal .err{color:#fca5a5;font-size:.78rem;font-weight:700;margin-bottom:8px;min-height:1em}
+  .modal .go{width:100%;border:none;border-radius:12px;padding:.8rem;font-weight:800;font-size:.95rem;color:#fff;background:linear-gradient(135deg,var(--purple),var(--blue));cursor:pointer;font-family:inherit}
+  .modal .go:disabled{opacity:.5}
+  .modal .alt{text-align:center;font-size:.78rem;color:var(--muted);margin-top:12px}
+  .modal .alt a{color:var(--purple);font-weight:800;cursor:pointer}
+  .modal .x{float:right;color:var(--muted);cursor:pointer;font-weight:900;font-size:1.2rem;line-height:1}
 </style>
 </head>
 <body>
@@ -56,6 +71,7 @@
   <div class="hero">
     <div class="logo">ElevatED U</div>
     <div class="tag">Sovereign Learning Engine</div>
+    <div id="acct" class="acct"></div>
   </div>
   <div class="sub">Adaptive test-prep engines. Pick your mission — each gives instant feedback, detailed answer explanations, and a read-aloud voice-over.</div>
 
@@ -122,5 +138,78 @@
     <b>ElevatED U</b> · practice content is original and standards-aligned; projected scores are study estimates, not official results.
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="platform.js"></script>
+<script>
+(function(){
+  var acct=document.getElementById('acct');
+  var P=window.AURA_PLATFORM;
+  function el(t,h){var e=document.createElement(t);if(h!=null)e.innerHTML=h;return e;}
+
+  function render(user){
+    acct.innerHTML="";
+    if(!P || !P.available()){ acct.appendChild(el("span","🔒 Practice works offline · accounts unavailable right now")); return; }
+    if(user){
+      var n=(P.profile()&&P.profile().display_name)||((user.email||"").split("@")[0])||"Student";
+      acct.appendChild(el("span","✓ Signed in as <b style='color:#cdbef0'>"+n+"</b> — progress saves across devices"));
+      var out=el("button","Sign out"); out.onclick=function(){ P.signOut(); }; acct.appendChild(out);
+    } else {
+      var b=el("button","👤 Sign in / Create account to save progress"); b.onclick=function(){ openModal("signup"); }; acct.appendChild(b);
+    }
+  }
+
+  function openModal(mode){
+    var ov=el("div"); ov.className="modal";
+    var box=el("div"); box.className="box";
+    var x=el("div","✕"); x.className="x"; x.onclick=function(){ document.body.removeChild(ov); };
+    box.appendChild(x);
+    var title=el("h3"); var lead=el("div"); lead.className="lead2";
+    var name=el("input"); name.placeholder="Display name"; name.autocomplete="name";
+    var email=el("input"); email.type="email"; email.placeholder="Email"; email.autocomplete="email";
+    var pw=el("input"); pw.type="password"; pw.placeholder="Password (8+ characters)"; pw.autocomplete="current-password";
+    var consentWrap=el("label"); consentWrap.className="consent";
+    var consent=el("input"); consent.type="checkbox"; consent.style.width="auto"; consent.style.margin="2px 0 0";
+    consentWrap.appendChild(consent);
+    consentWrap.appendChild(el("span","I agree that ElevatED U may store my practice activity to personalize my prep. Minimal info only (name + email). No selling of data."));
+    var err=el("div"); err.className="err";
+    var go=el("button"); go.className="go";
+    var alt=el("div"); alt.className="alt";
+
+    function setMode(m){
+      mode=m;
+      if(m==="signup"){ title.textContent="Create your account"; lead.textContent="Save your Error DNA and progress across devices."; name.style.display=""; consentWrap.style.display=""; go.textContent="Create account"; pw.autocomplete="new-password";
+        alt.innerHTML="Already have an account? <a>Sign in</a>"; }
+      else { title.textContent="Sign in"; lead.textContent="Welcome back — pick up where you left off."; name.style.display="none"; consentWrap.style.display="none"; go.textContent="Sign in"; pw.autocomplete="current-password";
+        alt.innerHTML="New here? <a>Create an account</a>"; }
+      alt.querySelector("a").onclick=function(){ setMode(m==="signup"?"signin":"signup"); err.textContent=""; };
+    }
+    function busy(b){ go.disabled=b; go.textContent=b?"…":(mode==="signup"?"Create account":"Sign in"); }
+    go.onclick=function(){
+      err.textContent="";
+      var e=email.value.trim(), p=pw.value;
+      if(!e||!p){ err.textContent="Email and password are required."; return; }
+      if(mode==="signup"){
+        if(p.length<8){ err.textContent="Password must be at least 8 characters."; return; }
+        if(!consent.checked){ err.textContent="Please accept the consent notice to continue."; return; }
+        busy(true);
+        P.signUp(e,p,name.value.trim()||e.split("@")[0]).then(function(r){
+          busy(false);
+          if(r.data && !r.data.session){ err.style.color="#a7f3d0"; err.textContent="Account created — you can sign in now."; setMode("signin"); }
+          else { document.body.removeChild(ov); }
+        }).catch(function(ex){ busy(false); err.textContent=(ex&&ex.message)||"Could not create account."; });
+      } else {
+        busy(true);
+        P.signIn(e,p).then(function(){ busy(false); document.body.removeChild(ov); })
+          .catch(function(ex){ busy(false); err.textContent=(ex&&ex.message)||"Could not sign in."; });
+      }
+    };
+    box.appendChild(title); box.appendChild(lead); box.appendChild(name); box.appendChild(email); box.appendChild(pw); box.appendChild(consentWrap); box.appendChild(err); box.appendChild(go); box.appendChild(alt);
+    ov.appendChild(box); ov.onclick=function( e2){ if(e2.target===ov) document.body.removeChild(ov); };
+    document.body.appendChild(ov); setMode(mode||"signup");
+  }
+
+  if(P){ P.onAuth(render); } else { render(null); }
+})();
+</script>
 </body>
 </html>

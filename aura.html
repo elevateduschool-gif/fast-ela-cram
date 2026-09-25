@@ -375,6 +375,7 @@ function grade(){
   var it=state.item, correct=(state.sel===it.correct);
   var b=behaviorReadout();
   Model.items++; if(b.system1){Model.system1++; Model.s2streak=0;} else {Model.system2++;}
+  if(window.AURA_PLATFORM){ try{ AURA_PLATFORM.logEvent({engine:"aura",section:it.section,skill:it.skill,item_id:it.id,correct:correct,system1:b.system1}); AURA_PLATFORM.bumpDNA("skill",it.skill,correct); }catch(e){} }
   if(correct){
     Model.correct++; Model.xp+=b.system1?5:12; if(!b.system1){ Model.s2streak++; if(Model.s2streak>Model.bestStreak)Model.bestStreak=Model.s2streak; }
     state.correctThisSession++; saveStore(); renderCorrect(b);
@@ -419,6 +420,7 @@ function renderErrorDNA(b){
     Model.trapCounts[chosen]=(Model.trapCounts[chosen]||0)+1;
     DNALOG.push({ ts:Date.now(), itemId:it.id, section:it.section, skill:it.skill, trap:chosen, why:why.value.trim().slice(0,240), system1:b.system1 });
     saveStore();
+    if(window.AURA_PLATFORM){ try{ AURA_PLATFORM.bumpDNA("trap",chosen,false); }catch(e){} }
     renderReview(chosen);
   };
   card.appendChild(rev);
@@ -516,5 +518,7 @@ function boot(){
 }
 boot();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="platform.js"></script>
 </body>
 </html>
