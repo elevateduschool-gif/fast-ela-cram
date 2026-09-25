@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a1a14" />
+<title>PERT Cram Decoder — Reading · Writing · Math</title>
+<style>
+  :root{
+    --bg:#0a1a14; --card:#122019; --card2:#16281f; --border:#254536;
+    --text:#eafff4; --muted:#8fbfa6; --emerald:#10b981; --teal:#14b8a6; --lime:#84cc16;
+    --green:#22c55e; --orange:#f59e0b; --red:#ef4444; --gold:#fbbf24;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px 40px}
+  .top{position:sticky;top:0;z-index:50;background:rgba(10,26,20,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px}
+  .top .row{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px}
+  .brand{font-weight:900;font-size:.95rem;background:linear-gradient(135deg,var(--emerald),var(--lime));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+  .spacer{flex:1}
+  .chip{font-size:.7rem;font-weight:800;padding:.25rem .55rem;border-radius:999px;border:1px solid var(--border);color:var(--muted);white-space:nowrap}
+  a.chip{text-decoration:none}
+  .meter-wrap{max-width:560px;margin:8px auto 0}
+  .meter-labels{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .meter{position:relative;height:12px;background:#0a140f;border:1px solid var(--border);border-radius:999px;overflow:visible}
+  .meter .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--orange),var(--gold),var(--green));width:0%;transition:width .6s cubic-bezier(.34,1.56,.64,1)}
+  .meter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;left:64%}
+  .meter .mark:after{content:"114";position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:900;color:#fff;white-space:nowrap}
+  .meter .cursor{position:absolute;top:-5px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--emerald);transform:translateX(-50%);transition:left .6s cubic-bezier(.34,1.56,.64,1)}
+  .score-line{max-width:560px;margin:6px auto 0;display:flex;align-items:baseline;gap:8px;font-size:.72rem;color:var(--muted);font-weight:700}
+  .score-line b{color:var(--text);font-size:1.05rem}
+  h1{font-size:1.5rem;font-weight:900;margin:18px 0 6px;letter-spacing:-.5px}
+  h2{font-size:1.05rem;font-weight:900;margin:16px 0 8px}
+  p{margin:0 0 10px}
+  .lead{color:var(--muted);font-weight:600;font-size:.9rem;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+  .card.tight{padding:13px}
+  .btn{display:block;width:100%;text-align:center;border:none;border-radius:12px;padding:.85rem 1rem;font-size:1rem;font-weight:800;font-family:inherit;cursor:pointer;color:#04150d;background:linear-gradient(135deg,var(--emerald),var(--lime));transition:opacity .2s,transform .05s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:#122019;border:1px solid var(--border);color:var(--muted)}
+  .btn.gold{background:linear-gradient(135deg,var(--orange),var(--gold));color:#231}
+  .spkrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+  .spk{display:inline-flex;align-items:center;gap:5px;background:#16281f;border:1px solid var(--emerald);color:#a7f3d0;border-radius:999px;padding:.32rem .7rem;font-size:.72rem;font-weight:800;font-family:inherit;cursor:pointer}
+  .spk:active{transform:translateY(1px)}
+  .spk.on{background:var(--emerald);color:#04150d}
+  .passage{background:linear-gradient(135deg,#0f1f18,#101a16);border:1px solid var(--border);border-radius:14px;padding:14px;margin:10px 0;font-size:.95rem;line-height:1.6}
+  .qhead{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+  .qn{font-size:.75rem;font-weight:900;color:var(--muted)}
+  .fmt{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--teal);border:1px solid rgba(20,184,166,.4);padding:.12rem .4rem;border-radius:5px}
+  .sect{font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--lime);border:1px solid rgba(132,204,22,.4);padding:.12rem .4rem;border-radius:5px}
+  .prompt{font-size:1.02rem;font-weight:800;margin:8px 0 4px;line-height:1.45}
+  .sub{font-size:.78rem;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .list{list-style:none;display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .opt{display:flex;gap:10px;align-items:flex-start;background:#0a140f;border:1.5px solid var(--border);border-radius:12px;padding:.7rem .8rem;cursor:pointer;font-size:.95rem;font-weight:600;text-align:left;transition:border-color .15s,background .15s}
+  .opt .k{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;color:var(--muted);margin-top:1px}
+  .opt.sel{border-color:var(--emerald);background:rgba(16,185,129,.12)}
+  .opt.sel .k{border-color:var(--emerald);color:#a7f3d0}
+  .opt.correct{border-color:var(--green);background:rgba(34,197,94,.14)}
+  .opt.correct .k{border-color:var(--green);color:var(--green)}
+  .opt.wrong{border-color:var(--red);background:rgba(239,68,68,.1)}
+  .opt.wrong .k{border-color:var(--red);color:var(--red)}
+  .opt.disabled{cursor:default}
+  .grid{display:flex;gap:8px;align-items:center;margin:10px 0}
+  .grid input{flex:1;background:#0a140f;border:1.5px solid var(--border);color:var(--text);border-radius:12px;padding:.75rem 1rem;font-size:1.05rem;font-family:inherit;font-weight:800;outline:none}
+  .grid input.correct{border-color:var(--green)}
+  .grid input.wrong{border-color:var(--red)}
+  .fb{border-radius:12px;padding:12px;margin-top:12px;font-size:.86rem;font-weight:600;line-height:1.55;border:1px solid}
+  .fb.good{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.35)}
+  .fb.bad{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.3)}
+  .fb .v{font-weight:900;font-size:.95rem;margin-bottom:6px}
+  .fb .why{color:#daffdf}
+  .fb .dis{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);color:var(--muted)}
+  .fb .dis b{color:#daffdf}
+  .fb .std{margin-top:8px;font-size:.68rem;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+  .prog{display:flex;gap:4px;margin:10px 0 4px;flex-wrap:wrap}
+  .prog i{flex:1;min-width:8px;height:6px;border-radius:4px;background:var(--border)}
+  .prog i.done{background:var(--green)}
+  .prog i.cur{background:var(--emerald)}
+  .bar{height:9px;background:#0a140f;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:5px}
+  .bar>i{display:block;height:100%}
+  .note{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center;margin:18px 0 0;line-height:1.5}
+  .big{font-size:3rem;font-weight:900;line-height:1;letter-spacing:-1px}
+  .center{text-align:center}
+  .pill{display:inline-block;padding:.3rem .8rem;border-radius:999px;font-weight:900;font-size:.85rem}
+  .decode{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:.55rem .7rem;margin:8px 0;font-size:.8rem;color:#a7f3d0;font-weight:600}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="row">
+    <a href="./" class="chip">← Engines</a>
+    <span class="brand">PERT Cram Decoder</span>
+    <span class="spacer"></span>
+    <span id="statusChip" class="chip">Briefing</span>
+  </div>
+  <div class="meter-wrap" id="meterWrap" style="display:none">
+    <div class="meter-labels"><span>50</span><span>COLLEGE-READY 114</span><span>150</span></div>
+    <div class="meter"><div class="fill" id="mFill"></div><div class="mark"></div><div class="cursor" id="mCursor"></div></div>
+    <div class="score-line">Projected PERT placement (estimate): <b id="mScore">—</b> <span id="mBand"></span></div>
+  </div>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =========================================================================
+   PERT Cram Decoder — adaptive practice (Reading + Writing + Mathematics)
+   Florida Postsecondary Education Readiness Test. Original practice content.
+   ========================================================================= */
+
+/* ---------- VOICE-OVER (Web Speech API) ---------- */
+var TTS = {
+  supported:(typeof window!=="undefined")&&("speechSynthesis" in window), voice:null, rate:0.95,
+  pickVoice:function(){ if(!this.supported)return; var vs=window.speechSynthesis.getVoices()||[];
+    this.voice=vs.find(function(v){return /en[-_]US/i.test(v.lang)&&/(Samantha|Natural|Google US English|Ava|Allison|Aaron)/i.test(v.name);})
+      || vs.find(function(v){return /^en/i.test(v.lang)&&/Google/i.test(v.name);})
+      || vs.find(function(v){return /^en/i.test(v.lang);}) || vs[0] || null; },
+  stop:function(){ if(this.supported){try{window.speechSynthesis.cancel();}catch(e){}} },
+  speaking:function(){ return this.supported && window.speechSynthesis.speaking; },
+  speakQueue:function(parts,onDone){ if(!this.supported||!parts||!parts.length){if(onDone)onDone();return;}
+    try{window.speechSynthesis.cancel();}catch(e){} var self=this;
+    parts.forEach(function(p,idx){ if(!p)return; var u=new SpeechSynthesisUtterance(String(p));
+      if(self.voice)u.voice=self.voice; u.rate=self.rate; u.pitch=1; u.lang="en-US";
+      if(idx===parts.length-1&&onDone)u.onend=onDone; window.speechSynthesis.speak(u); }); }
+};
+if(TTS.supported){ TTS.pickVoice(); try{window.speechSynthesis.onvoiceschanged=function(){TTS.pickVoice();};}catch(e){} }
+function LTR(i){ return String.fromCharCode(65+i); }
+function stripToSpeech(s){ return String(s==null?"":s).replace(/<[^>]+>/g," ")
+  .replace(/&amp;/g,"and").replace(/&lt;/g,"less than").replace(/&gt;/g,"greater than")
+  .replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[—–]/g,", ").replace(/\s+/g," ").trim(); }
+
+var SKILLS={
+  main:"Reading: Main Idea", inf:"Reading: Inference", vic:"Reading: Vocabulary in Context",
+  purp:"Reading: Author's Purpose/Tone", det:"Reading: Supporting Detail",
+  sva:"Writing: Subject–Verb Agreement", bound:"Writing: Sentence Boundaries", pron:"Writing: Pronouns & Modifiers",
+  trn:"Writing: Transitions", par:"Writing: Parallelism",
+  arith:"Math: Arithmetic & Percent", elem:"Math: Elementary Algebra", prop:"Math: Ratios & Proportions",
+  inter:"Math: Intermediate Algebra", exp:"Math: Exponents", geo:"Math: Geometry"
+};
+
+/* ---------- ITEM BANK ---------- */
+var BANK=[
+  /* ===== READING ===== */
+  { id:"r1", section:"Reading", skill:"main", level:1, format:"mc",
+    passage:"Community tool libraries lend out drills, ladders, and lawnmowers the way a book library lends novels. Supporters say most households use such tools only a few times a year, so sharing them saves money, reduces clutter, and keeps usable equipment out of landfills.",
+    prompt:"What is the main idea of the passage?",
+    options:["Most households own too many lawnmowers.","Tool libraries let people share rarely-used equipment, saving money and waste.","Book libraries should start lending tools.","Drills and ladders are dangerous to store at home."], correct:1,
+    rationale:"The passage's central point is that tool libraries share seldom-used tools, with the benefits (save money, reduce clutter, less landfill) as support.",
+    distractors:{0:"A supporting detail, not the main idea.",2:"The book comparison is an analogy, not the point.",3:"Safety/danger is never mentioned."} },
+  { id:"r2", section:"Reading", skill:"vic", level:1, format:"mc",
+    passage:"Although the trail was <b>arduous</b>—steep, rocky, and miles long—the hikers pushed on, certain the summit view would be worth every aching step.",
+    prompt:"As used in the passage, \"arduous\" most nearly means:",
+    options:["pleasant","difficult and demanding","short","confusing"], correct:1,
+    rationale:"The dashes define it: \"steep, rocky, and miles long\" plus \"aching step\" signal something hard — arduous = difficult and demanding.",
+    distractors:{0:"The opposite of the description.",2:"\"Miles long\" contradicts short.",3:"Difficulty isn't the same as confusion."} },
+  { id:"r3", section:"Reading", skill:"inf", level:2, format:"mc",
+    passage:"By the time the meeting started, Dana had already reread her notes twice, arranged her handouts in order, and set two backup pens beside her laptop.",
+    prompt:"What can most reasonably be inferred about Dana?",
+    options:["She dislikes her coworkers.","She is thoroughly prepared for the meeting.","She is running late.","She rarely takes notes."], correct:1,
+    rationale:"Rereading notes, ordering handouts, and setting backup pens are all signs of careful preparation — the logical inference.",
+    distractors:{0:"Nothing addresses her feelings about coworkers.",2:"She finished prep before it started — the opposite of late.",3:"She reread notes twice, so she clearly takes them."} },
+  { id:"r4", section:"Reading", skill:"purp", level:2, format:"mc",
+    passage:"Don't let another season's produce rot in the back of your fridge. This week, our app tells you exactly which vegetables to cook first—and turns your \"sad crisper drawer\" into three quick dinners.",
+    prompt:"What is the author's main purpose?",
+    options:["To explain how refrigerators keep food cold.","To persuade readers to use a food app that reduces waste.","To criticize people who waste vegetables.","To compare three dinner recipes."], correct:1,
+    rationale:"The promotional tone (\"our app,\" \"this week\") aims to persuade readers to use the app by promising less waste and easy dinners.",
+    distractors:{0:"Refrigerator mechanics aren't discussed.",2:"The tone is encouraging, not critical/blaming.",3:"Dinners are a benefit mentioned, not compared."} },
+  { id:"r5", section:"Reading", skill:"det", level:1, format:"mc",
+    passage:"The city's new bus line runs every 10 minutes on weekdays, every 20 minutes on weekends, and does not operate after midnight.",
+    prompt:"According to the passage, how often do buses run on Saturday?",
+    options:["Every 10 minutes","Every 20 minutes","Every 30 minutes","They do not run"], correct:1,
+    rationale:"Saturday is a weekend; the passage states weekend service is every 20 minutes.",
+    distractors:{0:"Every 10 minutes is the weekday rate.",2:"30 minutes isn't stated.",3:"Weekend service does run (just less often)."} },
+
+  /* ===== WRITING ===== */
+  { id:"w1", section:"Writing", skill:"sva", level:1, format:"mc",
+    prompt:"Choose the option that makes the sentence correct: \"The box of old photographs ______ on the top shelf.\"",
+    options:["are sitting","were sitting","is sitting","sit"], correct:2,
+    rationale:"The subject is \"box\" (singular) — the prepositional phrase \"of old photographs\" doesn't change it. Singular subject → \"is sitting.\"",
+    distractors:{0:"\"are\" agrees with photographs, not the true subject \"box.\"",1:"\"were\" is plural (and past); subject is singular.",3:"\"sit\" is plural present."} },
+  { id:"w2", section:"Writing", skill:"bound", level:2, format:"mc",
+    prompt:"Which choice correctly joins the two ideas: \"The rain finally stopped ______ the game resumed after a short delay.\"",
+    options:[", and","(no punctuation)",";","—and"], correct:0,
+    rationale:"Two independent clauses joined by a coordinating conjunction (\"and\") take a comma before the conjunction: \"…stopped, and the game…\"",
+    distractors:{1:"No punctuation creates a run-on (fused sentence).",2:"A semicolon shouldn't be followed by \"and\" plus a clause here — and the sentence keeps \"and\".",3:"\"—and\" is nonstandard for joining independent clauses."} },
+  { id:"w3", section:"Writing", skill:"pron", level:2, format:"mc",
+    prompt:"Choose the correct version: \"Each of the students must bring ______ own laptop.\"",
+    options:["their","they're","his or her","there"], correct:2,
+    rationale:"\"Each\" is singular, so PERT/standard usage pairs it with a singular \"his or her.\" (\"Their\" is common in speech but tested as the plural mismatch here.)",
+    distractors:{0:"\"their\" is plural; \"each\" is grammatically singular on the test.",1:"\"they're\" = they are.",3:"\"there\" indicates place."} },
+  { id:"w4", section:"Writing", skill:"trn", level:2, format:"mc",
+    prompt:"Choose the best transition: \"The store advertised huge savings. ______, most items were only a few cents cheaper.\"",
+    options:["Therefore","However","For example","Meanwhile"], correct:1,
+    rationale:"The ad promised big savings, but reality contradicted it — a contrast, so \"However.\"",
+    distractors:{0:"\"Therefore\" signals a result that agrees; this opposes.",2:"\"For example\" introduces an illustration, not a contrast.",3:"\"Meanwhile\" signals simultaneous time, not contradiction."} },
+  { id:"w5", section:"Writing", skill:"par", level:2, format:"mc",
+    prompt:"Choose the option that keeps the list parallel: \"On weekends she enjoys hiking, swimming, and ______.\"",
+    options:["to bike","biking","she bikes","a bike ride"], correct:1,
+    rationale:"The list uses -ing forms (\"hiking, swimming\"), so parallel structure requires \"biking.\"",
+    distractors:{0:"\"to bike\" is an infinitive, breaking the -ing pattern.",2:"\"she bikes\" is a full clause, not parallel.",3:"\"a bike ride\" is a noun phrase, not parallel."} },
+
+  /* ===== MATH ===== */
+  { id:"p1", section:"Math", skill:"arith", level:1, format:"mc",
+    prompt:"What is 35% of 80?",
+    options:["24","28","35","2.8"], correct:1,
+    rationale:"35% = 0.35. 0.35 × 80 = 28.",
+    distractors:{0:"24 is 30% of 80.",2:"35 copies the percent, not the result.",3:"2.8 misplaces the decimal (that's 3.5% of 80)."} },
+  { id:"p2", section:"Math", skill:"elem", level:2, format:"mc",
+    prompt:"Solve for x: 5x − 7 = 3x + 9.",
+    options:["1","4","8","16"], correct:2,
+    rationale:"5x − 3x = 9 + 7 → 2x = 16 → x = 8.",
+    distractors:{0:"1 comes from arithmetic slips.",1:"4 solves 2x = 8 (dropped a term).",3:"16 is 2x, not x — forgot to divide by 2."} },
+  { id:"p3", section:"Math", skill:"prop", level:2, format:"mc",
+    prompt:"A car travels 150 miles on 5 gallons of gas. At the same rate, how far can it travel on 8 gallons?",
+    options:["200 miles","240 miles","280 miles","300 miles"], correct:1,
+    rationale:"Rate = 150 ÷ 5 = 30 miles per gallon. 30 × 8 = 240 miles.",
+    distractors:{0:"200 uses the wrong rate.",2:"280 adds instead of scaling.",3:"300 doubles 150 without matching gallons."} },
+  { id:"p4", section:"Math", skill:"inter", level:3, format:"mc",
+    prompt:"Which are the solutions to x² + 2x − 15 = 0?",
+    options:["x = 3 and x = 5","x = −3 and x = 5","x = 3 and x = −5","x = −3 and x = −5"], correct:2,
+    rationale:"Factor: (x − 3)(x + 5) = 0 → x = 3 or x = −5. (Numbers multiply to −15 and add to +2.)",
+    distractors:{0:"3 and 5 multiply to +15, not −15.",1:"−3 and 5 multiply to −15 but add to +2? −3+5=2 ✓ but −3·5=−15 ✓ — check signs: (x+3)(x−5)=x²−2x−15, wrong sign on middle term.",3:"−3 and −5 add to −8."} },
+  { id:"p5", section:"Math", skill:"exp", level:2, format:"mc",
+    prompt:"Simplify: (x³)(x⁴).",
+    options:["x⁷","x¹²","x¹","2x⁷"], correct:0,
+    rationale:"When multiplying like bases, add exponents: 3 + 4 = 7, so x⁷.",
+    distractors:{1:"x¹² multiplies the exponents (that's the power rule).",2:"x¹ subtracts them.",3:"You don't add a coefficient of 2."} },
+  { id:"p6", section:"Math", skill:"elem", level:2, format:"grid",
+    prompt:"If 3(x + 4) = 27, what is the value of x?",
+    answers:["5"],
+    rationale:"Divide both sides by 3: x + 4 = 9. Subtract 4: x = 5." }
+];
+
+/* ---------- ENGINE (item-adaptive, 3-section rotation) ---------- */
+var SESSION_LEN=12;
+var SECTIONS=["Reading","Writing","Math"];
+var state={ screen:"briefing", target:2, used:{}, answered:0, item:null, responses:[], perSkill:{} };
+
+function pickNext(){
+  var sec=SECTIONS[state.answered % SECTIONS.length];
+  var cands=BANK.filter(function(x){ return !state.used[x.id] && x.section===sec; });
+  if(!cands.length) cands=BANK.filter(function(x){ return !state.used[x.id]; });
+  if(!cands.length) return null;
+  cands.sort(function(a,b){ return Math.abs(a.level-state.target)-Math.abs(b.level-state.target); });
+  return cands[0];
+}
+function recordResponse(it,frac){
+  state.responses.push({skill:it.skill,section:it.section,level:it.level,frac:frac});
+  if(!state.perSkill[it.skill]) state.perSkill[it.skill]={sum:0,n:0};
+  state.perSkill[it.skill].sum+=frac; state.perSkill[it.skill].n++;
+}
+function projectedScore(){
+  if(!state.responses.length) return null;
+  var earned=0,possible=0,lvlSum=0;
+  state.responses.forEach(function(r){ earned+=r.frac*r.level; possible+=r.level; lvlSum+=r.level; });
+  var wAcc=possible>0?earned/possible:0, avgLevel=lvlSum/state.responses.length;
+  var s=Math.round(50 + wAcc*100 + (avgLevel-2)*10);
+  if(s<50)s=50; if(s>150)s=150; return s;
+}
+function bandFor(s){
+  if(s>=123) return {t:"College-ready (MAC/credit-bearing)",c:"var(--green)"};
+  if(s>=114) return {t:"College-ready",c:"var(--green)"};
+  if(s>=106) return {t:"Approaching college-ready",c:"var(--orange)"};
+  return {t:"Developmental range — keep building",c:"var(--red)"};
+}
+function updateMeter(){
+  var s=projectedScore(), fill=document.getElementById("mFill"), cur=document.getElementById("mCursor");
+  var sc=document.getElementById("mScore"), bd=document.getElementById("mBand");
+  if(s===null){ sc.textContent="—"; return; }
+  var pct=((s-50)/100)*100; if(pct<0)pct=0; if(pct>100)pct=100;
+  fill.style.width=pct+"%"; cur.style.left=pct+"%"; sc.textContent=s;
+  var b=bandFor(s); bd.textContent="· "+b.t; bd.style.color=b.c;
+}
+
+var app=document.getElementById("app");
+function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;}
+function setChip(t){document.getElementById("statusChip").textContent=t;}
+
+function speakQuestion(it,onDone){
+  var parts=[]; if(it.passage) parts.push(stripToSpeech(it.passage));
+  parts.push(stripToSpeech(it.prompt));
+  if(it.format==="mc") (it.options||[]).forEach(function(o,i){ parts.push("Option "+LTR(i)+". "+stripToSpeech(o)); });
+  TTS.speakQueue(parts,onDone);
+}
+function speakElimination(it,onDone){
+  var parts=["Let's decode this one."];
+  if(it.format==="mc"){
+    parts.push("By process of elimination:");
+    it.options.forEach(function(o,i){ var lead="Option "+LTR(i)+". "+stripToSpeech(o)+". ";
+      if(i===it.correct) parts.push(lead+"This one is correct. "+stripToSpeech(it.rationale));
+      else { var n=it.distractors&&it.distractors[String(i)]; parts.push(lead+"Cross it out. "+(n?stripToSpeech(n):"It doesn't fit.")); } });
+    parts.push("The answer is "+LTR(it.correct)+".");
+  } else { parts.push(stripToSpeech(it.prompt)); parts.push("Solution: "+stripToSpeech(it.rationale)); parts.push("The answer is "+it.answers[0]+"."); }
+  TTS.speakQueue(parts,onDone);
+}
+function speakBtn(label,run){ var b=el("button","spk",label);
+  b.onclick=function(){ if(TTS.speaking()){TTS.stop();b.textContent=label;b.classList.remove("on");return;}
+    b.textContent="⏹ Stop"; b.classList.add("on"); run(function(){b.textContent=label;b.classList.remove("on");}); };
+  return b; }
+
+function startExam(){ state.screen="exam"; document.getElementById("meterWrap").style.display="block"; nextItem(); }
+function nextItem(){ if(state.answered>=SESSION_LEN){ showResults(); return; } var it=pickNext(); if(!it){ showResults(); return; } state.used[it.id]=true; state.item=it; render(); }
+
+function render(){
+  TTS.stop(); app.innerHTML=""; var it=state.item;
+  setChip("Q"+(state.answered+1)+"/"+SESSION_LEN+" · "+it.section+" · L"+it.level);
+  updateMeter();
+  var pr=el("div","prog"); for(var j=0;j<SESSION_LEN;j++){ pr.appendChild(el("i", j<state.answered?"done":(j===state.answered?"cur":""))); } app.appendChild(pr);
+  var card=el("div","card");
+  var qh=el("div","qhead");
+  qh.appendChild(el("span","qn","Question "+(state.answered+1)));
+  qh.appendChild(el("span","sect",it.section));
+  qh.appendChild(el("span","fmt",it.format==="grid"?"Type-in":"Multiple Choice"));
+  card.appendChild(qh);
+  if(TTS.supported){ var vrow=el("div","spkrow");
+    vrow.appendChild(speakBtn("🔊 Read question", function(done){ speakQuestion(it,done); }));
+    var rates=[0.8,0.95,1.15], rlabels=["0.8×","1×","1.2×"], ri=1; TTS.rate=rates[ri];
+    var sp=el("button","spk","⚙ Speed "+rlabels[ri]); sp.onclick=function(){ ri=(ri+1)%rates.length; TTS.rate=rates[ri]; sp.textContent="⚙ Speed "+rlabels[ri]; };
+    vrow.appendChild(sp); card.appendChild(vrow); }
+  if(it.passage) card.appendChild(el("div","passage",it.passage));
+  card.appendChild(el("div","prompt",it.prompt));
+  card.appendChild(el("div","sub",SKILLS[it.skill]||it.section));
+
+  var submit=el("button","btn","Submit Answer"); submit.disabled=true; var answered=false;
+  if(it.format==="mc"){
+    var sel=-1; var ul=el("div","list");
+    it.options.forEach(function(o,idx){ var li=el("div","opt");
+      li.appendChild(el("span","k",LTR(idx))); li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(answered)return; sel=idx; [].forEach.call(ul.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); submit.disabled=false; };
+      ul.appendChild(li); });
+    card.appendChild(ul);
+    submit.onclick=function(){ if(sel<0||answered)return; answered=true; submit.style.display="none";
+      var correct=(sel===it.correct), frac=correct?1:0;
+      [].forEach.call(ul.children,function(c,idx){ c.classList.add("disabled"); c.classList.remove("sel");
+        if(idx===it.correct)c.classList.add("correct"); else if(idx===sel)c.classList.add("wrong"); });
+      recordResponse(it,frac); updateMeter();
+      var note=(!correct && it.distractors)?it.distractors[String(sel)]:null;
+      card.appendChild(feedback(it,correct,note)); card.appendChild(nextBtn()); };
+  } else {
+    var wrap=el("div","grid"); var inp=document.createElement("input"); inp.type="text"; inp.inputMode="decimal"; inp.placeholder="Type your answer";
+    inp.oninput=function(){ submit.disabled=inp.value.trim()===""; }; wrap.appendChild(inp); card.appendChild(wrap);
+    submit.onclick=function(){ if(answered)return; var val=inp.value.trim(); if(val==="")return; answered=true; submit.style.display="none";
+      var correct=gridCorrect(val,it.answers), frac=correct?1:0; inp.disabled=true; inp.classList.add(correct?"correct":"wrong");
+      recordResponse(it,frac); updateMeter();
+      var note=correct?null:("You entered "+val+". The correct answer is "+it.answers[0]+".");
+      card.appendChild(feedback(it,correct,note)); card.appendChild(nextBtn()); };
+  }
+  card.appendChild(submit); app.appendChild(card); window.scrollTo(0,0);
+}
+function gridCorrect(val,answers){ var v=val.replace(/\s/g,"");
+  for(var i=0;i<answers.length;i++){ if(v===answers[i]) return true; var a=parseFloat(answers[i]), b=parseFloat(v); if(!isNaN(a)&&!isNaN(b)&&Math.abs(a-b)<1e-6) return true; } return false; }
+
+function feedback(it,correct,note){
+  var f=el("div","fb "+(correct?"good":"bad"));
+  f.appendChild(el("div","v",(correct?"✅ Correct":"❌ Not quite")));
+  f.appendChild(el("div","why","<b>Why:</b> "+it.rationale));
+  if(note) f.appendChild(el("div","dis","<b>🔍 Where it slipped:</b> "+note));
+  f.appendChild(el("div","std","PERT "+it.section+" · "+(SKILLS[it.skill]||"")));
+  if(TTS.supported){ var wrow=el("div","spkrow"); wrow.style.margin="10px 0 0";
+    wrow.appendChild(speakBtn("🔊 Walk me through it", function(done){ speakElimination(it,done); })); f.appendChild(wrow); }
+  return f;
+}
+function nextBtn(){ var last=(state.answered>=SESSION_LEN-1);
+  var b=el("button","btn gold",last?"See my results →":"Next question →"); b.style.marginTop="10px";
+  b.onclick=function(){ TTS.stop();
+    var lastFrac=state.responses[state.responses.length-1].frac;
+    if(lastFrac>=1) state.target=Math.min(3,state.target+1); else if(lastFrac<=0) state.target=Math.max(1,state.target-1);
+    state.answered++; if(state.answered>=SESSION_LEN) showResults(); else nextItem(); };
+  return b; }
+
+function showResults(){
+  TTS.stop(); state.screen="results"; app.innerHTML=""; setChip("Results");
+  var s=projectedScore(), band=bandFor(s); updateMeter();
+  var head=el("div","card center");
+  head.appendChild(el("div","lead","Projected PERT Placement (estimate)"));
+  var big=el("div","big",String(s)); big.style.color=band.c; head.appendChild(big);
+  var pill=el("div","pill",band.t); pill.style.background="rgba(16,185,129,.14)"; pill.style.color=band.c; pill.style.border="1px solid "+band.c; pill.style.marginTop="8px"; head.appendChild(pill);
+  head.appendChild(el("p","lead","<br>PERT scores each section 50–150. Common Florida college-ready cut scores: <b>Reading 106</b>, <b>Writing 103</b>, <b>Math 114</b> (123+ places into credit-bearing MAC math). Confirm your college's exact cut scores."));
+  app.appendChild(head);
+  // section split
+  var secAgg={}; state.responses.forEach(function(r){ if(!secAgg[r.section])secAgg[r.section]={sum:0,n:0}; secAgg[r.section].sum+=r.frac; secAgg[r.section].n++; });
+  var sc=el("div","card"); sc.appendChild(el("h2",null,"By section"));
+  SECTIONS.forEach(function(k){ if(!secAgg[k])return; var pct=Math.round(secAgg[k].sum/secAgg[k].n*100); var col=pct<50?"var(--red)":(pct<75?"var(--orange)":"var(--green)");
+    var row=el("div"); row.style.margin="8px 0";
+    row.innerHTML="<div style='display:flex;justify-content:space-between;font-size:.85rem;font-weight:800'><span>"+k+"</span><span style='color:"+col+"'>"+pct+"%</span></div>";
+    var bar=el("div","bar"); var fi=el("i"); fi.style.width=pct+"%"; fi.style.background=col; bar.appendChild(fi); row.appendChild(bar); sc.appendChild(row); });
+  app.appendChild(sc);
+  // per-skill
+  var ks=Object.keys(state.perSkill); ks.sort(function(a,b){ return (state.perSkill[a].sum/state.perSkill[a].n)-(state.perSkill[b].sum/state.perSkill[b].n); });
+  var sk=el("div","card"); sk.appendChild(el("h2",null,"Skill breakdown (weakest first)"));
+  ks.forEach(function(k){ var o=state.perSkill[k], pct=Math.round(o.sum/o.n*100), col=pct<50?"var(--red)":(pct<75?"var(--orange)":"var(--green)");
+    var row=el("div"); row.style.margin="9px 0";
+    row.innerHTML="<div style='display:flex;justify-content:space-between;font-size:.8rem;font-weight:800'><span>"+(SKILLS[k]||k)+"</span><span style='color:"+col+"'>"+pct+"% ("+o.n+")</span></div>";
+    var bar=el("div","bar"); var fi=el("i"); fi.style.width=pct+"%"; fi.style.background=col; bar.appendChild(fi); row.appendChild(bar); sk.appendChild(row); });
+  app.appendChild(sk);
+  var again=el("button","btn","Run another set →"); again.onclick=resetAll; app.appendChild(again);
+  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="8px"; home.onclick=function(){ location.href="./"; }; app.appendChild(home);
+  app.appendChild(el("div","note","Original PERT-styled practice. Not affiliated with the FLDOE or Cambium; projected placement is a study estimate — verify cut scores with your college."));
+  window.scrollTo(0,0);
+}
+function resetAll(){ TTS.stop(); state.target=2; state.used={}; state.answered=0; state.item=null; state.responses=[]; state.perSkill={};
+  document.getElementById("mFill").style.width="0%"; document.getElementById("mCursor").style.left="0%";
+  document.getElementById("mScore").textContent="—"; document.getElementById("mBand").textContent=""; startExam(); }
+
+/* ---------- BRIEFING ---------- */
+function renderBriefing(){
+  state.screen="briefing"; setChip("Briefing"); app.innerHTML="";
+  app.appendChild(el("h1",null,"PERT Cram Decoder"));
+  app.appendChild(el("div","lead","Adaptive prep for Florida's <b>Postsecondary Education Readiness Test</b> — Reading, Writing, and Mathematics. Place into <b>college-ready</b> courses and skip costly developmental classes. Instant feedback, full explanations, and read-aloud voice-over on every item."));
+  app.appendChild(el("div","decode","🔓 <b>Decode the test:</b> PERT is untimed and computer-adaptive — each correct answer raises the difficulty. There's no penalty for thinking; slow down, eliminate two wrong choices first, then decide."));
+  var s=el("div","card"); s.appendChild(el("h2",null,"How this engine works"));
+  [["It adapts like the real PERT.","Start at medium difficulty; get one right → harder, miss one → it eases off. It rotates Reading, Writing, and Math."],
+   ["Learn from every miss.","Each answer shows the reasoning and why each wrong choice was a trap — tap 🔊 Walk me through it to hear it."],
+   ["Placement meter.","A live 50–150 meter estimates your placement against the 114 college-ready line as you go."]
+  ].forEach(function(t,i){ var d=el("div"); d.style.margin="10px 0"; d.style.paddingLeft="26px"; d.style.position="relative";
+    var n=el("span",null,String(i+1)); n.style.cssText="position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--emerald);color:#04150d;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center"; d.appendChild(n);
+    d.innerHTML+="<b style='font-size:.92rem'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>"; s.appendChild(d); });
+  app.appendChild(s);
+  var go=el("button","btn","Start Adaptive PERT Set →"); go.onclick=startExam; app.appendChild(go);
+  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="8px"; home.onclick=function(){ location.href="./"; }; app.appendChild(home);
+  app.appendChild(el("div","note","Original PERT-styled practice. Not affiliated with the FLDOE; projected placement is a study estimate."));
+  window.scrollTo(0,0);
+}
+renderBriefing();
+</script>
+</body>
+</html>
