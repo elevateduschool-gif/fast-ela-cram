@@ -232,28 +232,36 @@ var BANK=[
     rationale:"Divide both sides by 3: x + 4 = 9. Subtract 4: x = 5." }
 ];
 
-/* ---------- ENGINE (item-adaptive, 3-section rotation) ---------- */
-var SESSION_LEN=12;
+/* ---------- ENGINE (item-adaptive; subtest or mixed; front-loaded score vector) ---------- */
 var SECTIONS=["Reading","Writing","Math"];
-var state={ screen:"briefing", target:2, used:{}, answered:0, item:null, responses:[], perSkill:{} };
+var ARCHETYPES={ main:"Main Idea vs. Detail", vic:"Vocabulary-in-Context", inf:"Logical Inference (what MUST be true)", purp:"Author's Purpose / Tone", det:"Locate the Stated Detail",
+  sva:"Subject–Verb Agreement (interrupter)", bound:"Run-on / Comma-Splice Fix", pron:"Pronoun–Antecedent Agreement", trn:"Contrast Transition", par:"Parallel Structure",
+  arith:"Percent of a Number", elem:"Linear Equation Solve", prop:"Unit-Rate Proportion", inter:"Factor a Quadratic", exp:"Exponent Product Rule", geo:"Geometry Basics" };
+var state={ screen:"briefing", subtest:"Mixed", sessionLen:12, focusZone:5, target:2, used:{}, answered:0, item:null, responses:[], perSkill:{} };
 
 function pickNext(){
-  var sec=SECTIONS[state.answered % SECTIONS.length];
-  var cands=BANK.filter(function(x){ return !state.used[x.id] && x.section===sec; });
-  if(!cands.length) cands=BANK.filter(function(x){ return !state.used[x.id]; });
+  var cands;
+  if(state.subtest==="Mixed"){ var sec=SECTIONS[state.answered % SECTIONS.length];
+    cands=BANK.filter(function(x){ return !state.used[x.id] && x.section===sec; });
+    if(!cands.length) cands=BANK.filter(function(x){ return !state.used[x.id]; });
+  } else { cands=BANK.filter(function(x){ return !state.used[x.id] && x.section===state.subtest; }); }
   if(!cands.length) return null;
   cands.sort(function(a,b){ return Math.abs(a.level-state.target)-Math.abs(b.level-state.target); });
   return cands[0];
 }
 function recordResponse(it,frac){
-  state.responses.push({skill:it.skill,section:it.section,level:it.level,frac:frac});
+  state.responses.push({skill:it.skill,section:it.section,level:it.level,frac:frac,pos:state.answered});
   if(!state.perSkill[it.skill]) state.perSkill[it.skill]={sum:0,n:0};
   state.perSkill[it.skill].sum+=frac; state.perSkill[it.skill].n++;
 }
 function projectedScore(){
   if(!state.responses.length) return null;
   var earned=0,possible=0,lvlSum=0;
-  state.responses.forEach(function(r){ earned+=r.frac*r.level; possible+=r.level; lvlSum+=r.level; });
+  state.responses.forEach(function(r){
+    // Score-vector weighting: opening (Focus Zone) answers count more — the CAT locks trajectory early.
+    var w=(r.pos < state.focusZone) ? 1.6 : 1.0;
+    earned+=r.frac*r.level*w; possible+=r.level*w; lvlSum+=r.level;
+  });
   var wAcc=possible>0?earned/possible:0, avgLevel=lvlSum/state.responses.length;
   var s=Math.round(50 + wAcc*100 + (avgLevel-2)*10);
   if(s<50)s=50; if(s>150)s=150; return s;
@@ -299,14 +307,25 @@ function speakBtn(label,run){ var b=el("button","spk",label);
     b.textContent="⏹ Stop"; b.classList.add("on"); run(function(){b.textContent=label;b.classList.remove("on");}); };
   return b; }
 
-function startExam(){ state.screen="exam"; document.getElementById("meterWrap").style.display="block"; nextItem(); }
-function nextItem(){ if(state.answered>=SESSION_LEN){ showResults(); return; } var it=pickNext(); if(!it){ showResults(); return; } state.used[it.id]=true; state.item=it; render(); }
+function computeSession(){
+  if(state.subtest==="Mixed") return Math.min(12, BANK.length);
+  return BANK.filter(function(x){ return x.section===state.subtest; }).length;
+}
+function startExam(subtest){
+  state.subtest=subtest||"Mixed";
+  state.sessionLen=computeSession();
+  state.focusZone=Math.min(7, Math.max(3, Math.round(state.sessionLen*0.45)));
+  state.screen="exam"; document.getElementById("meterWrap").style.display="block"; nextItem();
+}
+function nextItem(){ if(state.answered>=state.sessionLen){ showResults(); return; } var it=pickNext(); if(!it){ showResults(); return; } state.used[it.id]=true; state.item=it; render(); }
 
 function render(){
   TTS.stop(); app.innerHTML=""; var it=state.item;
-  setChip("Q"+(state.answered+1)+"/"+SESSION_LEN+" · "+it.section+" · L"+it.level);
+  setChip("Q"+(state.answered+1)+"/"+state.sessionLen+" · "+it.section+" · L"+it.level);
   updateMeter();
-  var pr=el("div","prog"); for(var j=0;j<SESSION_LEN;j++){ pr.appendChild(el("i", j<state.answered?"done":(j===state.answered?"cur":""))); } app.appendChild(pr);
+  var pr=el("div","prog"); for(var j=0;j<state.sessionLen;j++){ pr.appendChild(el("i", j<state.answered?"done":(j===state.answered?"cur":""))); } app.appendChild(pr);
+  if(state.answered < state.focusZone) app.appendChild(el("div","decode","🎯 <b>Score Vector · Focus Zone (Q"+(state.answered+1)+" of "+state.focusZone+")</b> — the PERT locks your trajectory on the opening questions, and you can't change an answer once submitted. It's untimed: slow down and spend maximum focus HERE."));
+  else app.appendChild(el("div","decode","🔒 Trajectory set — steady now. Protect the placement you've built."));
   var card=el("div","card");
   var qh=el("div","qhead");
   qh.appendChild(el("span","qn","Question "+(state.answered+1)));
@@ -356,12 +375,13 @@ function feedback(it,correct,note){
   f.appendChild(el("div","v",(correct?"✅ Correct":"❌ Not quite")));
   f.appendChild(el("div","why","<b>Why:</b> "+it.rationale));
   if(note) f.appendChild(el("div","dis","<b>🔍 Where it slipped:</b> "+note));
-  f.appendChild(el("div","std","PERT "+it.section+" · "+(SKILLS[it.skill]||"")));
+  f.appendChild(el("div","std","PERT "+it.section+" · "+(SKILLS[it.skill]||"")+" · 🧩 Archetype: "+(ARCHETYPES[it.skill]||"")));
+  f.appendChild(el("div","dis","🔒 <b>Locked in.</b> On the real PERT you can't return to this — which is exactly why we front-load focus. This archetype repeats across the test; learn it once."));
   if(TTS.supported){ var wrow=el("div","spkrow"); wrow.style.margin="10px 0 0";
     wrow.appendChild(speakBtn("🔊 Walk me through it", function(done){ speakElimination(it,done); })); f.appendChild(wrow); }
   return f;
 }
-function nextBtn(){ var last=(state.answered>=SESSION_LEN-1);
+function nextBtn(){ var last=(state.answered>=state.sessionLen-1);
   var b=el("button","btn gold",last?"See my results →":"Next question →"); b.style.marginTop="10px";
   b.onclick=function(){ TTS.stop();
     var lastFrac=state.responses[state.responses.length-1].frac;
@@ -401,7 +421,7 @@ function showResults(){
 }
 function resetAll(){ TTS.stop(); state.target=2; state.used={}; state.answered=0; state.item=null; state.responses=[]; state.perSkill={};
   document.getElementById("mFill").style.width="0%"; document.getElementById("mCursor").style.left="0%";
-  document.getElementById("mScore").textContent="—"; document.getElementById("mBand").textContent=""; startExam(); }
+  document.getElementById("mScore").textContent="—"; document.getElementById("mBand").textContent=""; startExam(state.subtest||"Mixed"); }
 
 /* ---------- BRIEFING ---------- */
 function renderBriefing(){
@@ -417,9 +437,22 @@ function renderBriefing(){
     var n=el("span",null,String(i+1)); n.style.cssText="position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--emerald);color:#04150d;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center"; d.appendChild(n);
     d.innerHTML+="<b style='font-size:.92rem'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>"; s.appendChild(d); });
   app.appendChild(s);
-  var go=el("button","btn","Start Adaptive PERT Set →"); go.onclick=startExam; app.appendChild(go);
-  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="8px"; home.onclick=function(){ location.href="./"; }; app.appendChild(home);
-  app.appendChild(el("div","note","Original PERT-styled practice. Not affiliated with the FLDOE; projected placement is a study estimate."));
+  var mech=el("div","card"); mech.appendChild(el("h2",null,"🔑 PERT mechanics, decoded"));
+  [["Adaptive & trajectory-locked","Questions start intermediate; each correct answer raises difficulty, each miss lowers it — and you can NEVER change or return to a submitted answer. Your opening answers set the whole score vector."],
+   ["Front-load your focus","Because it's computer-adaptive, the first 5–7 questions matter most. Pour your energy there — this engine marks that Focus Zone and weights it in your projected placement."],
+   ["Untimed — speed is irrelevant","There's no clock (not here either). Never rush: eliminate two wrong choices, then decide."],
+   ["Formulaic by design","Each real subtest is 30 questions (25 scored + 5 hidden field-test) covering broad skills, so the same archetypes repeat. Learn the pattern once — this engine names the archetype on every item."]
+  ].forEach(function(t){ var d=el("div"); d.style.margin="9px 0"; d.innerHTML="<b style='font-size:.9rem'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>"; mech.appendChild(d); });
+  app.appendChild(mech);
+
+  var pick=el("div",null,"Choose your subtest — the PERT is taken one subtest at a time"); pick.style.cssText="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--emerald);margin:14px 0 6px"; app.appendChild(pick);
+  [["Reading","📖 Reading subtest"],["Writing","✍️ Writing subtest"],["Math","🧮 Math subtest"],["Mixed","🔀 Mixed diagnostic (all three)"]].forEach(function(pair){
+    var b=el("button", pair[0]==="Mixed"?"btn ghost":"btn", pair[1]); b.style.marginBottom="8px";
+    b.onclick=function(){ startExam(pair[0]); };
+    app.appendChild(b);
+  });
+  var home=el("button","btn ghost","← Back to engines"); home.style.marginTop="4px"; home.onclick=function(){ location.href="./"; }; app.appendChild(home);
+  app.appendChild(el("div","note","Original PERT-styled practice; the real subtest is 30 questions (25 scored). Not affiliated with the FLDOE; projected placement is a study estimate."));
   window.scrollTo(0,0);
 }
 renderBriefing();
