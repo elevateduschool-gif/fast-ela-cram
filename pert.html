@@ -232,12 +232,36 @@ var BANK=[
     rationale:"Divide both sides by 3: x + 4 = 9. Subtract 4: x = 5." }
 ];
 
+/* ---------- CRAM MASTERY augmentation: load-reduction breakdowns, Socratic ladders, twin problems ---------- */
+var CRAM={
+  r1:{ breakdown:["Chunk 1 — what's being lent? Everyday tools (drills, ladders, mowers).","Chunk 2 — the claim: most homes use them only a few times a year.","Chunk 3 — so sharing = save money + less clutter + less landfill.","Now pick the choice that restates THAT whole idea, not one detail."],
+       socratic:["In one short phrase, what is the passage mostly about?","Is 'lawnmowers' the main point, or just an example?","Which choice covers the whole idea instead of a single detail?"] },
+  r3:{ breakdown:["List what Dana did: reread notes twice, ordered handouts, set backup pens.","Ask: what kind of person does all that before a meeting?","Match that to a choice — without adding facts the text never gave."],
+       socratic:["What do all of Dana's actions have in common?","Does the text say anything about her feelings toward coworkers?","What's the smallest safe conclusion the details force?"] },
+  p2:{ breakdown:["Goal: get x by itself.","Move x-terms to one side, numbers to the other: 5x − 3x = 9 + 7.","Combine: 2x = 16.","Divide by 2: x = 8."],
+       socratic:["What are you solving for?","How do you gather the x-terms on one side?","After 2x = 16, what is the final step?"],
+       twin:{ section:"Math", skill:"elem", level:2, format:"mc", prompt:"Solve for x: 6x − 5 = 2x + 15.", options:["2","4","5","10"], correct:2, rationale:"6x − 2x = 15 + 5 → 4x = 20 → x = 5." } },
+  p3:{ breakdown:["Find the unit rate: 150 miles ÷ 5 gallons = 30 miles per gallon.","Multiply by the new amount: 30 × 8.","= 240 miles."],
+       socratic:["What is the 'per gallon' rate?","Once you have the rate, what do you multiply it by?"],
+       twin:{ section:"Math", skill:"prop", level:2, format:"mc", prompt:"A printer prints 90 pages in 3 minutes. At that rate, how many pages in 7 minutes?", options:["180","210","270","630"], correct:1, rationale:"Rate = 90 ÷ 3 = 30 pages/min. 30 × 7 = 210." } },
+  p4:{ breakdown:["Need two numbers that multiply to −15 and add to +2.","Test +5 and −3: 5×(−3) = −15 ✓ and 5 + (−3) = 2 ✓.","So (x + 5)(x − 3) = 0 → x = −5 or x = 3."],
+       socratic:["What two numbers multiply to −15?","Of those pairs, which one adds to +2?","What x-values make each factor equal zero?"] },
+  w2:{ socratic:["Are both parts complete sentences (independent clauses)?","Can a comma by itself legally join two independent clauses?","Which option joins them correctly?"] }
+};
+BANK.forEach(function(it){ if(CRAM[it.id]){ for(var k in CRAM[it.id]) it[k]=CRAM[it.id][k]; } });
+
 /* ---------- ENGINE (item-adaptive; subtest or mixed; front-loaded score vector) ---------- */
 var SECTIONS=["Reading","Writing","Math"];
 var ARCHETYPES={ main:"Main Idea vs. Detail", vic:"Vocabulary-in-Context", inf:"Logical Inference (what MUST be true)", purp:"Author's Purpose / Tone", det:"Locate the Stated Detail",
   sva:"Subject–Verb Agreement (interrupter)", bound:"Run-on / Comma-Splice Fix", pron:"Pronoun–Antecedent Agreement", trn:"Contrast Transition", par:"Parallel Structure",
   arith:"Percent of a Number", elem:"Linear Equation Solve", prop:"Unit-Rate Proportion", inter:"Factor a Quadratic", exp:"Exponent Product Rule", geo:"Geometry Basics" };
-var state={ screen:"briefing", subtest:"Mixed", sessionLen:12, focusZone:5, target:2, used:{}, answered:0, item:null, responses:[], perSkill:{} };
+var ETIOLOGY={
+  concept:{em:"🧠",name:"Conceptual gap",desc:"didn't know the rule/method",fix:"Re-learn the underlying rule before drilling — you need the concept, not more reps."},
+  compute:{em:"🧮",name:"Computation slip",desc:"right method, wrong calculation",fix:"Slow the final line — re-do the last computation once before you lock in."},
+  misread:{em:"📖",name:"Reading misinterpretation",desc:"misread the text or the question",fix:"Underline exactly what's asked and restate it in your own words first."},
+  careless:{em:"⚡",name:"Careless / rushed",desc:"knew it but went too fast",fix:"A Focus-Zone leak: one deliberate breath, then verify before submitting."}
+};
+var state={ screen:"briefing", mode:"practice", subtest:"Mixed", sessionLen:12, focusZone:5, target:2, used:{}, answered:0, item:null, responses:[], perSkill:{}, etiology:{} };
 
 function pickNext(){
   var cands;
@@ -311,10 +335,17 @@ function computeSession(){
   if(state.subtest==="Mixed") return Math.min(12, BANK.length);
   return BANK.filter(function(x){ return x.section===state.subtest; }).length;
 }
+function resetSession(){ TTS.stop(); state.used={}; state.answered=0; state.item=null; state.responses=[]; state.perSkill={}; state.etiology={}; state.target=2;
+  document.getElementById("mFill").style.width="0%"; document.getElementById("mCursor").style.left="0%"; document.getElementById("mScore").textContent="—"; document.getElementById("mBand").textContent=""; }
 function startExam(subtest){
-  state.subtest=subtest||"Mixed";
+  resetSession(); state.mode="practice"; state.subtest=subtest||"Mixed";
   state.sessionLen=computeSession();
   state.focusZone=Math.min(7, Math.max(3, Math.round(state.sessionLen*0.45)));
+  state.screen="exam"; document.getElementById("meterWrap").style.display="block"; nextItem();
+}
+function startDiagnostic(){
+  resetSession(); state.mode="diagnostic"; state.subtest="Mixed";
+  state.sessionLen=Math.min(7, BANK.length); state.focusZone=7;
   state.screen="exam"; document.getElementById("meterWrap").style.display="block"; nextItem();
 }
 function nextItem(){ if(state.answered>=state.sessionLen){ showResults(); return; } var it=pickNext(); if(!it){ showResults(); return; } state.used[it.id]=true; state.item=it; render(); }
@@ -340,6 +371,7 @@ function render(){
   if(it.passage) card.appendChild(el("div","passage",it.passage));
   card.appendChild(el("div","prompt",it.prompt));
   card.appendChild(el("div","sub",SKILLS[it.skill]||it.section));
+  appendTools(card,it);
 
   var submit=el("button","btn","Submit Answer"); submit.disabled=true; var answered=false;
   if(it.format==="mc"){
@@ -355,7 +387,7 @@ function render(){
         if(idx===it.correct)c.classList.add("correct"); else if(idx===sel)c.classList.add("wrong"); });
       recordResponse(it,frac); updateMeter();
       var note=(!correct && it.distractors)?it.distractors[String(sel)]:null;
-      card.appendChild(feedback(it,correct,note)); card.appendChild(nextBtn()); };
+      revealOutcome(card,it,correct,note); };
   } else {
     var wrap=el("div","grid"); var inp=document.createElement("input"); inp.type="text"; inp.inputMode="decimal"; inp.placeholder="Type your answer";
     inp.oninput=function(){ submit.disabled=inp.value.trim()===""; }; wrap.appendChild(inp); card.appendChild(wrap);
@@ -363,7 +395,7 @@ function render(){
       var correct=gridCorrect(val,it.answers), frac=correct?1:0; inp.disabled=true; inp.classList.add(correct?"correct":"wrong");
       recordResponse(it,frac); updateMeter();
       var note=correct?null:("You entered "+val+". The correct answer is "+it.answers[0]+".");
-      card.appendChild(feedback(it,correct,note)); card.appendChild(nextBtn()); };
+      revealOutcome(card,it,correct,note); };
   }
   card.appendChild(submit); app.appendChild(card); window.scrollTo(0,0);
 }
@@ -383,11 +415,79 @@ function feedback(it,correct,note){
 }
 function nextBtn(){ var last=(state.answered>=state.sessionLen-1);
   var b=el("button","btn gold",last?"See my results →":"Next question →"); b.style.marginTop="10px";
-  b.onclick=function(){ TTS.stop();
-    var lastFrac=state.responses[state.responses.length-1].frac;
-    if(lastFrac>=1) state.target=Math.min(3,state.target+1); else if(lastFrac<=0) state.target=Math.max(1,state.target-1);
-    state.answered++; if(state.answered>=SESSION_LEN) showResults(); else nextItem(); };
+  b.onclick=function(){ advance(); };
   return b; }
+function advance(){ TTS.stop();
+  var lastFrac=state.responses.length?state.responses[state.responses.length-1].frac:0;
+  if(lastFrac>=1) state.target=Math.min(3,state.target+1); else if(lastFrac<=0) state.target=Math.max(1,state.target-1);
+  state.answered++; if(state.answered>=state.sessionLen) showResults(); else nextItem();
+}
+
+/* ----- Cram Mastery: comprehension tools, diagnostic etiology, twin remediation ----- */
+function appendTools(card,it){
+  if(!it.breakdown && !it.socratic) return;
+  var row=el("div","spkrow"); var panel=el("div");
+  if(it.breakdown){
+    var b=el("button","spk","🧩 Break it down"), open=false;
+    b.onclick=function(){ open=!open; var ex=panel.querySelector("[data-bd]");
+      if(open && !ex){ var box=el("div","decode"); box.setAttribute("data-bd","1"); box.innerHTML="<b>Cognitive-load breakdown</b><br>"+it.breakdown.map(function(s,i){return (i+1)+". "+s;}).join("<br>"); panel.appendChild(box); b.classList.add("on"); }
+      else if(!open && ex){ ex.remove(); b.classList.remove("on"); } };
+    row.appendChild(b);
+  }
+  if(it.socratic){
+    var si=0, s=el("button","spk","💬 Socratic hint");
+    s.onclick=function(){ if(si>=it.socratic.length) return; var q=el("div","decode"); q.style.borderStyle="dashed"; q.innerHTML="💬 <b>Think:</b> "+it.socratic[si]; panel.appendChild(q); si++;
+      s.textContent = si>=it.socratic.length ? "💬 (no more hints — you've got the logic)" : "💬 Socratic hint ("+si+"/"+it.socratic.length+")"; };
+    row.appendChild(s);
+  }
+  card.appendChild(row); card.appendChild(panel);
+}
+function revealOutcome(card,it,correct,note){
+  if(state.mode==="diagnostic" && !correct){ renderEtiology(card,it,correct,note); }
+  else { card.appendChild(feedback(it,correct,note)); appendTwinOffer(card,it); card.appendChild(nextBtn()); }
+}
+function appendTwinOffer(card,it){
+  if(!it.twin) return;
+  var b=el("button","btn","🔁 Try the twin — same structure, new numbers"); b.style.marginTop="10px";
+  b.onclick=function(){ b.disabled=true; renderTwin(it.twin); };
+  card.appendChild(b);
+}
+function renderEtiology(card,it,correct,note){
+  var box=el("div","fb bad");
+  box.innerHTML="<div class='v'>🧬 Diagnose the miss — no fix yet</div><div class='why'>Name <b>why</b> you missed it. This maps your error etiology so we fix the real cause, not the symptom.</div>";
+  var grid=el("div"); grid.style.cssText="display:flex;flex-direction:column;gap:6px;margin-top:8px";
+  Object.keys(ETIOLOGY).forEach(function(k){ var e=ETIOLOGY[k];
+    var b=el("button","btn ghost", e.em+" "+e.name+" — "+e.desc); b.style.cssText="text-align:left;font-size:.8rem;padding:.55rem .7rem;color:var(--text)";
+    b.onclick=function(){ state.etiology[k]=(state.etiology[k]||0)+1; box.remove();
+      card.appendChild(feedback(it,correct,note));
+      card.appendChild(el("div","decode","<b>"+e.em+" Etiology logged: "+e.name+"</b><br>🛠 "+e.fix));
+      appendTwinOffer(card,it); card.appendChild(nextBtn()); };
+    grid.appendChild(b); });
+  box.appendChild(grid); card.appendChild(box);
+}
+function renderTwin(twin){
+  TTS.stop(); app.innerHTML=""; setChip("🔁 Twin practice");
+  var card=el("div","card");
+  card.appendChild(el("div","sub","🔁 Twin problem — identical structure, new numbers ("+(SKILLS[twin.skill]||twin.section)+")"));
+  if(twin.passage) card.appendChild(el("div","passage",twin.passage));
+  card.appendChild(el("div","prompt",twin.prompt));
+  var submit=el("button","btn","Submit"); submit.disabled=true; var done=false;
+  function finish(ok){ card.appendChild(el("div","fb "+(ok?"good":"bad"),"<div class='v'>"+(ok?"✅ Nailed the twin — pattern locked":"❌ Not yet")+"</div><div class='why'><b>Why:</b> "+twin.rationale+"</div>"));
+    var cont=el("button","btn gold","Continue →"); cont.style.marginTop="10px"; cont.onclick=function(){ advance(); }; card.appendChild(cont); }
+  if(twin.format==="grid"){
+    var wrap=el("div","grid"); var inp=document.createElement("input"); inp.type="text"; inp.inputMode="decimal"; inp.placeholder="Type your answer";
+    inp.oninput=function(){ submit.disabled=inp.value.trim()===""; }; wrap.appendChild(inp); card.appendChild(wrap);
+    submit.onclick=function(){ if(done)return; var v=inp.value.trim(); if(v==="")return; done=true; submit.style.display="none"; var ok=gridCorrect(v,twin.answers); inp.disabled=true; inp.classList.add(ok?"correct":"wrong"); finish(ok); };
+  } else {
+    var sel=-1, ul=el("div","list");
+    twin.options.forEach(function(o,idx){ var li=el("div","opt"); li.appendChild(el("span","k",LTR(idx))); li.appendChild(el("span",null,o));
+      li.onclick=function(){ if(done)return; sel=idx; [].forEach.call(ul.children,function(c){c.classList.remove("sel");}); li.classList.add("sel"); submit.disabled=false; }; ul.appendChild(li); });
+    card.appendChild(ul);
+    submit.onclick=function(){ if(sel<0||done)return; done=true; submit.style.display="none"; var ok=(sel===twin.correct);
+      [].forEach.call(ul.children,function(c,idx){ c.classList.add("disabled"); if(idx===twin.correct)c.classList.add("correct"); else if(idx===sel)c.classList.add("wrong"); }); finish(ok); };
+  }
+  card.appendChild(submit); app.appendChild(card); window.scrollTo(0,0);
+}
 
 function showResults(){
   TTS.stop(); state.screen="results"; app.innerHTML=""; setChip("Results");
@@ -398,6 +498,21 @@ function showResults(){
   var pill=el("div","pill",band.t); pill.style.background="rgba(16,185,129,.14)"; pill.style.color=band.c; pill.style.border="1px solid "+band.c; pill.style.marginTop="8px"; head.appendChild(pill);
   head.appendChild(el("p","lead","<br>PERT scores each section 50–150. Common Florida college-ready cut scores: <b>Reading 106</b>, <b>Writing 103</b>, <b>Math 114</b> (123+ places into credit-bearing MAC math). Confirm your college's exact cut scores."));
   app.appendChild(head);
+  // Error Etiology Map (diagnostic mode)
+  if(state.mode==="diagnostic"){
+    var em=el("div","card"); em.appendChild(el("h2",null,"🧬 Error Etiology Map"));
+    var eks=Object.keys(state.etiology);
+    if(!eks.length){ em.appendChild(el("p","lead","No misses to diagnose — clean run. Push into a harder subtest to find your edges.")); }
+    else{ eks.sort(function(a,b){return state.etiology[b]-state.etiology[a];}); var mx=state.etiology[eks[0]]||1;
+      eks.forEach(function(k){ var e=ETIOLOGY[k], n=state.etiology[k];
+        var row=el("div"); row.style.margin="9px 0";
+        row.innerHTML="<div style='display:flex;justify-content:space-between;font-size:.82rem;font-weight:800'><span>"+e.em+" "+e.name+"</span><span style='color:var(--emerald)'>"+n+"×</span></div>";
+        var bar=el("div","bar"); var fi=el("i"); fi.style.width=Math.round(n/mx*100)+"%"; fi.style.background="var(--emerald)"; bar.appendChild(fi); row.appendChild(bar);
+        row.appendChild(el("div",null,"<span style='font-size:.75rem;color:var(--muted);font-weight:600'>🛠 "+e.fix+"</span>")); em.appendChild(row); });
+      var top=ETIOLOGY[eks[0]];
+      em.appendChild(el("div","decode","<b>Priority for your 48-hour sprint:</b> your dominant error type is <b>"+top.name+"</b>. "+top.fix)); }
+    app.appendChild(em);
+  }
   // section split
   var secAgg={}; state.responses.forEach(function(r){ if(!secAgg[r.section])secAgg[r.section]={sum:0,n:0}; secAgg[r.section].sum+=r.frac; secAgg[r.section].n++; });
   var sc=el("div","card"); sc.appendChild(el("h2",null,"By section"));
@@ -419,9 +534,7 @@ function showResults(){
   app.appendChild(el("div","note","Original PERT-styled practice. Not affiliated with the FLDOE or Cambium; projected placement is a study estimate — verify cut scores with your college."));
   window.scrollTo(0,0);
 }
-function resetAll(){ TTS.stop(); state.target=2; state.used={}; state.answered=0; state.item=null; state.responses=[]; state.perSkill={};
-  document.getElementById("mFill").style.width="0%"; document.getElementById("mCursor").style.left="0%";
-  document.getElementById("mScore").textContent="—"; document.getElementById("mBand").textContent=""; startExam(state.subtest||"Mixed"); }
+function resetAll(){ if(state.mode==="diagnostic") startDiagnostic(); else startExam(state.subtest||"Mixed"); }
 
 /* ---------- BRIEFING ---------- */
 function renderBriefing(){
@@ -445,6 +558,8 @@ function renderBriefing(){
   ].forEach(function(t){ var d=el("div"); d.style.margin="9px 0"; d.innerHTML="<b style='font-size:.9rem'>"+t[0]+"</b><div style='font-size:.82rem;color:var(--muted);font-weight:600;margin-top:2px'>"+t[1]+"</div>"; mech.appendChild(d); });
   app.appendChild(mech);
 
+  var diag=el("button","btn","🩺 7-Question Entry Diagnostic → map my error etiology"); diag.onclick=function(){ startDiagnostic(); }; app.appendChild(diag);
+  var orr=el("div",null,"— or drill a full subtest —"); orr.style.cssText="text-align:center;color:var(--muted);font-size:.72rem;font-weight:700;margin:12px 0 2px"; app.appendChild(orr);
   var pick=el("div",null,"Choose your subtest — the PERT is taken one subtest at a time"); pick.style.cssText="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--emerald);margin:14px 0 6px"; app.appendChild(pick);
   [["Reading","📖 Reading subtest"],["Writing","✍️ Writing subtest"],["Math","🧮 Math subtest"],["Mixed","🔀 Mixed diagnostic (all three)"]].forEach(function(pair){
     var b=el("button", pair[0]==="Mixed"?"btn ghost":"btn", pair[1]); b.style.marginBottom="8px";
